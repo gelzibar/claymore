@@ -2,13 +2,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class playerController : MonoBehaviour {
+public class playerController : NetworkBehaviour {
 
 
 	private Rigidbody myRigidBody;
 	public float torque;
 	public float accel;
+	public GameObject myCam;
 
 	public GameObject fltire, frtire, bltire, brtire;
 
@@ -22,6 +24,10 @@ public class playerController : MonoBehaviour {
 	void Start () {
 		myRigidBody = GetComponent<Rigidbody> ();
 
+		if (!isLocalPlayer) {
+			myCam.SetActive (false);
+		}
+
 
 		torque = 500.0f;
 		accel = 800.0f;
@@ -32,9 +38,11 @@ public class playerController : MonoBehaviour {
 //		if(Input.GetKey(KeyCode.W)) {
 //			myRigidBody.AddForce ((Vector3.back + Vector3.down) * 10f);
 //		}
-
-		float forward = Input.GetAxis("Vertical");
-		float turn = Input.GetAxis("Horizontal");
+		if (!isLocalPlayer) {
+			return;
+		}
+			float forward = Input.GetAxis ("Vertical");
+			float turn = Input.GetAxis ("Horizontal");
 
 
 		//myRigidBody.AddRelativeForce (Vector3.down * accel * forward, ForceMode.Acceleration);
@@ -69,6 +77,9 @@ public class playerController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
+		if (!isLocalPlayer)
+		{
+			return;
+		}
 	}
 }
