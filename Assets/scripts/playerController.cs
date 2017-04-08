@@ -11,8 +11,13 @@ public class playerController : NetworkBehaviour {
 	public float torque;
 	public float accel;
 	public GameObject myCam;
+	public GameObject myLineRendererObject;
+	private LineRenderer myLineRenderer;
 
-	public GameObject fltire, frtire, bltire, brtire;
+	const int trailMaxSize = 10;
+	public List<Vector3> trails;
+	public int trailIndex, prevTrailIndex;
+	public float minDistance;
 
 	void OnGUI()
 	{
@@ -23,14 +28,27 @@ public class playerController : NetworkBehaviour {
 	// Use this for initialization
 	void Start () {
 		myRigidBody = GetComponent<Rigidbody> ();
+		myLineRendererObject = (GameObject)Instantiate (myLineRendererObject, myRigidBody.position, myRigidBody.rotation, myRigidBody.transform);
 
 		if (!isLocalPlayer) {
+			
 			myCam.SetActive (false);
-		}
+			myLineRendererObject.gameObject.SetActive (false);
+		} 
+
+		myLineRenderer = myLineRendererObject.GetComponent<LineRenderer> ();
+			
 
 
 		torque = 500.0f;
 		accel = 800.0f;
+
+		trails = new List<Vector3>();
+		trailIndex = 1;
+		prevTrailIndex = 0;
+		minDistance = 5.0f;
+		SetInitialLine ();
+		TrailsToLinePositions ();
 
 	}
 
@@ -81,5 +99,104 @@ public class playerController : NetworkBehaviour {
 		{
 			return;
 		}
+//		trails [trailIndex] = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
+//		Debug.Log(trailIndex + " : " + trails[trailIndex].ToString());
+//		trailIndex++;
+		UpdateLinePositions();
+		TrailsToLinePositions ();
 	}
+
+	void TrailInbounds() {
+		int maxIndex = trailMaxSize - 1;
+
+		if (trailIndex > maxIndex) {
+			trails.RemoveAt (0);
+			trails.Add(new Vector3(myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z));
+
+			trailIndex--;
+			prevTrailIndex--;
+			//trailIndex = 0;
+		}
+//		if (prevTrailIndex > maxIndex) {
+//			prevTrailIndex = 0;
+//		}
+	}
+
+//	void PopulateTrails() {
+//		for(int i = 0; i < trailMaxSize; i++) {
+//			trails.Add (new Vector3 (0, 0, 0));
+//		}
+//		SetInitialLine ();
+//	}
+
+	bool CompareLinePositions() {
+		bool returnValue = false;
+		float curDistance = Vector3.Distance (myRigidBody.position, trails [prevTrailIndex]);
+
+		if (curDistance > minDistance) {
+			returnValue = true;
+		}
+
+		return returnValue;
+	}
+
+	void UpdateLinePositions() {
+		Vector3 curPosition = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
+
+		trails[trailIndex] = curPosition;
+
+		if (CompareLinePositions ()) {
+			// Create trail/line objects for trailIndex.
+			if (trails.Capacity < trailMaxSize) {
+				trails.Add (curPosition);
+				LineRendererAdd (curPosition);
+			} else if (trails.Count < trails.Capacity && trails.Count < trailMaxSize) {
+				trails.Add (curPosition);
+				LineRendererAdd (curPosition);
+			}
+
+			trailIndex++;
+			prevTrailIndex++;
+			TrailInbounds ();
+			trails [prevTrailIndex] = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
+
+			//trails [trailIndex] = curPosition;
+
+
+			//		Vector3 curPosition = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
+			//		if(trails.Count < trails.Capacity) {
+			//			trails.Add(curPosition);
+			//			LineRendererAdd (curPosition);
+			//		}else if(trails.Capacity < trailMaxSize)
+			//		{
+			//			//trails.Add(curPosition);
+			//			//LineRendererAdd (curPosition);
+			//		}else{
+			//			trails[trailIndex] = curPosition;
+			//		}
+
+			//if (CompareLinePositions ()) {
+
+			//}
+		}
+	}
+
+	void SetInitialLine() {
+		trails.Add(new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z));
+		trails.Add(new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z));
+		myLineRenderer.numPositions = trails.Count;
+	}
+
+	void TrailsToLinePositions() {
+		for(int i = 0; i < myLineRenderer.numPositions; i++){
+//			myLineRenderer.GetPosition(i) = trails [i];
+			myLineRenderer.SetPosition (i, trails [i]);
+		}
+	}
+
+	void LineRendererAdd(Vector3 vector) {
+		myLineRenderer.numPositions++;
+		myLineRenderer.SetPosition (myLineRenderer.numPositions - 1, vector);
+	}
+		
 }
