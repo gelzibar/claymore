@@ -14,16 +14,20 @@ public class playerController : NetworkBehaviour {
 	public GameObject myLineRendererObject;
 	private LineRenderer myLineRenderer;
 
-	const int trailMaxSize = 10;
+	const int trailMaxSize = 100;
 	public List<Vector3> trails;
-	public List<GameObject> collisionTrails;
-	public GameObject pCollisionTrail;
+	public List<GameObject> slickTrails;
+	public GameObject pSlickTrail;
 	public int trailIndex, prevTrailIndex;
 	public float minDistance;
 	public float zRearOffset;
-	private bool disableTrail, disableTrailToggle;
+	//private bool disableTrail, disableTrailToggle;
+	public trail_maker sTrails;
+	public float hover;
 
 	public GameObject exhaust;
+
+	bool triggerF12;
 
 	void OnTriggerEnter(Collider col) {
 		Debug.Log ("Collision with " + col);
@@ -38,12 +42,14 @@ public class playerController : NetworkBehaviour {
 		int frames = (int)(1.0f / Time.smoothDeltaTime);
 		string torqueText = "Torque: " + torque.ToString ();
 		string dragText = "Drag: " + myRigidBody.angularDrag.ToString ();
+		string hoverText = "Hover: " + hover.ToString ();
 		float turn = Input.GetAxis ("Horizontal");
 
 
-		GUI.Label(new Rect(300, 0, 100, 100), dragText);     
-		GUI.Label(new Rect(300, 10, 100, 100), torqueText);
-		GUI.Label(new Rect(300, 20, 100, 100), "Turn: " + turn.ToString());        
+		GUI.Label(new Rect(300, 0, 100, 100), dragText); 
+		GUI.Label(new Rect(300, 10, 100, 100), hoverText);
+		GUI.Label(new Rect(300, 20, 100, 100), torqueText);
+		GUI.Label(new Rect(300, 30, 100, 100), "Turn: " + turn.ToString());        
 		GUI.Label(new Rect(10, 0, 100, 100), frames.ToString());        
 	}
 
@@ -59,23 +65,27 @@ public class playerController : NetworkBehaviour {
 //			myLineRendererObject.gameObject.SetActive (false);
 		} 
 
+		sTrails = GetComponent<trail_maker> ();
 		myLineRenderer = GetComponentInChildren<LineRenderer> ();
 		exhaust = transform.Find ("exhaust").gameObject;
-		disableTrail = false;
-		disableTrailToggle = false;
+		sTrails.enabled = false;
+		sTrails.toggle = false;
 			
 
 		zRearOffset = 1.0f;
 		torque = 515.0f;
 		accel = 800.0f;
+		hover = 125f;
 
 		trails = new List<Vector3>();
 		trailIndex = 1;
 		prevTrailIndex = 0;
 		minDistance = 5.0f;
-		collisionTrails = new List<GameObject> ();
+		slickTrails = new List<GameObject> ();
 		SetInitialLine ();
 		TrailsToLinePositions ();
+
+		triggerF12 = false;
 
 	}
 
@@ -91,6 +101,9 @@ public class playerController : NetworkBehaviour {
 
 
 		//myRigidBody.AddRelativeForce (Vector3.down * accel * forward, ForceMode.Acceleration);
+		if (forward != 0) {
+			myRigidBody.AddRelativeForce (Vector3.up * hover * Time.fixedDeltaTime);
+		}
 		myRigidBody.AddRelativeTorque (Vector3.up * turn * torque * Time.fixedDeltaTime);
 		myRigidBody.AddRelativeForce (Vector3.forward * accel * forward * Time.fixedDeltaTime, ForceMode.Force);
 		//myRigidBody.AddForce (Vector3.up * 1);
@@ -127,9 +140,18 @@ public class playerController : NetworkBehaviour {
 //		trailIndex++;
 		UpdateLinePositions();
 		TrailsToLinePositions ();
+
 		if (!isLocalPlayer)
 		{
 			return;
+		}
+
+
+		if(Input.GetKeyDown(KeyCode.Space)) {
+
+			sTrails.enabled = !sTrails.enabled;
+			sTrails.toggle = true;
+
 		}
 
 		if(Input.GetKey(KeyCode.M)) {
@@ -160,13 +182,39 @@ public class playerController : NetworkBehaviour {
 		if(Input.GetKey(KeyCode.RightBracket)) {
 			newDrag = newDrag + 10;
 		}
+
 		myRigidBody.angularDrag = newDrag;
 
-		if(Input.GetKeyDown(KeyCode.Space)) {
-			
-			disableTrail = !disableTrail;
-			disableTrailToggle = true;
-		
+		if(Input.GetKey(KeyCode.K)) {
+
+			hover = hover - 10;
+		}
+		if(Input.GetKeyDown(KeyCode.L)) {
+			hover = hover - 1;
+		}
+		if(Input.GetKeyDown(KeyCode.Semicolon)) {
+			hover = hover + 1;
+		}
+		if(Input.GetKey(KeyCode.Quote)) {
+			hover = hover + 10;
+		}
+
+		if(Input.GetKeyDown(KeyCode.F1)) {
+			transform.rotation = new Quaternion ();
+		}
+		if(Input.GetKeyDown(KeyCode.Escape)) {
+			transform.position = new Vector3 (-23, 50, 436);
+		}
+
+		if(Input.GetKeyDown(KeyCode.F12)) {
+			if(triggerF12 == false) {
+				myRigidBody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+				triggerF12 = true;
+			}else if (triggerF12 == true) {
+				myRigidBody.constraints = RigidbodyConstraints.None;
+				triggerF12 = true;
+			}
+
 		}
 	}
 
@@ -207,14 +255,14 @@ public class playerController : NetworkBehaviour {
 	void UpdateLinePositions() {
 		Vector3 curPosition = new Vector3 (exhaust.transform.position.x, exhaust.transform.position.y, exhaust.transform.position.z);
 
-		if (disableTrail == false) {
-			if (disableTrailToggle == true) {
+		if (sTrails.enabled == false) {
+			if (sTrails.toggle == true) {
 				trails.Clear ();
 				SetInitialLine ();
 				trailIndex = 1;
 				prevTrailIndex = 0;
 
-				disableTrailToggle = false;
+				sTrails.toggle = false;
 			}
 			trails [trailIndex] = curPosition;
 
@@ -232,6 +280,8 @@ public class playerController : NetworkBehaviour {
 				prevTrailIndex++;
 				TrailInbounds ();
 				trails [prevTrailIndex] = curPosition;
+
+				slickTrails.Add (Instantiate(pSlickTrail, curPosition, myRigidBody.rotation));
 
 				//trails [trailIndex] = curPosition;
 
@@ -259,7 +309,6 @@ public class playerController : NetworkBehaviour {
 		Vector3 initialLine = new Vector3 (exhaust.transform.position.x, exhaust.transform.position.y, exhaust.transform.position.z);
 		trails.Add(initialLine);
 		trails.Add(initialLine);
-		collisionTrails.Add (pCollisionTrail);
 		//configureCollisionTrail ();
 		myLineRenderer.numPositions = trails.Count;
 	}
