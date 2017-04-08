@@ -16,37 +16,64 @@ public class playerController : NetworkBehaviour {
 
 	const int trailMaxSize = 10;
 	public List<Vector3> trails;
+	public List<GameObject> collisionTrails;
+	public GameObject pCollisionTrail;
 	public int trailIndex, prevTrailIndex;
 	public float minDistance;
+	public float zRearOffset;
+	private bool disableTrail, disableTrailToggle;
+
+	public GameObject exhaust;
+
+	void OnTriggerEnter(Collider col) {
+		Debug.Log ("Collision with " + col);
+	}
 
 	void OnGUI()
 	{
+		if (!isLocalPlayer)
+		{
+			return;
+		}
 		int frames = (int)(1.0f / Time.smoothDeltaTime);
+		string torqueText = "Torque: " + torque.ToString ();
+		string dragText = "Drag: " + myRigidBody.angularDrag.ToString ();
+		float turn = Input.GetAxis ("Horizontal");
+
+
+		GUI.Label(new Rect(300, 0, 100, 100), dragText);     
+		GUI.Label(new Rect(300, 10, 100, 100), torqueText);
+		GUI.Label(new Rect(300, 20, 100, 100), "Turn: " + turn.ToString());        
 		GUI.Label(new Rect(10, 0, 100, 100), frames.ToString());        
 	}
 
 	// Use this for initialization
 	void Start () {
 		myRigidBody = GetComponent<Rigidbody> ();
-		myLineRendererObject = (GameObject)Instantiate (myLineRendererObject, myRigidBody.position, myRigidBody.rotation, myRigidBody.transform);
+		//myLineRendererObject = (GameObject)Instantiate (myLineRendererObject, myRigidBody.position, myRigidBody.rotation, myRigidBody.transform);
+//		myLineRendererObject = GetComponent<LineRenderer>();
 
 		if (!isLocalPlayer) {
 			
 			myCam.SetActive (false);
-			myLineRendererObject.gameObject.SetActive (false);
+//			myLineRendererObject.gameObject.SetActive (false);
 		} 
 
-		myLineRenderer = myLineRendererObject.GetComponent<LineRenderer> ();
+		myLineRenderer = GetComponentInChildren<LineRenderer> ();
+		exhaust = transform.Find ("exhaust").gameObject;
+		disableTrail = false;
+		disableTrailToggle = false;
 			
 
-
-		torque = 500.0f;
+		zRearOffset = 1.0f;
+		torque = 515.0f;
 		accel = 800.0f;
 
 		trails = new List<Vector3>();
 		trailIndex = 1;
 		prevTrailIndex = 0;
 		minDistance = 5.0f;
+		collisionTrails = new List<GameObject> ();
 		SetInitialLine ();
 		TrailsToLinePositions ();
 
@@ -95,15 +122,52 @@ public class playerController : NetworkBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (!isLocalPlayer)
-		{
-			return;
-		}
 //		trails [trailIndex] = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
 //		Debug.Log(trailIndex + " : " + trails[trailIndex].ToString());
 //		trailIndex++;
 		UpdateLinePositions();
 		TrailsToLinePositions ();
+		if (!isLocalPlayer)
+		{
+			return;
+		}
+
+		if(Input.GetKey(KeyCode.M)) {
+			torque = torque - 10;
+		}
+		if(Input.GetKeyDown(KeyCode.Comma)) {
+			torque = torque - 1;
+		}
+		if(Input.GetKeyDown(KeyCode.Period)) {
+			torque = torque + 1;
+		}
+		if(Input.GetKey(KeyCode.Slash)) {
+			torque = torque + 10;
+		}
+
+		float newDrag = myRigidBody.angularDrag;
+
+		if(Input.GetKey(KeyCode.O)) {
+			 
+			newDrag = newDrag - 10;
+		}
+		if(Input.GetKeyDown(KeyCode.P)) {
+			newDrag = newDrag - 1;
+		}
+		if(Input.GetKeyDown(KeyCode.LeftBracket)) {
+			newDrag = newDrag + 1;
+		}
+		if(Input.GetKey(KeyCode.RightBracket)) {
+			newDrag = newDrag + 10;
+		}
+		myRigidBody.angularDrag = newDrag;
+
+		if(Input.GetKeyDown(KeyCode.Space)) {
+			
+			disableTrail = !disableTrail;
+			disableTrailToggle = true;
+		
+		}
 	}
 
 	void TrailInbounds() {
@@ -111,7 +175,7 @@ public class playerController : NetworkBehaviour {
 
 		if (trailIndex > maxIndex) {
 			trails.RemoveAt (0);
-			trails.Add(new Vector3(myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z));
+			trails.Add(new Vector3(exhaust.transform.position.x, exhaust.transform.position.y, exhaust.transform.position.z));
 
 			trailIndex--;
 			prevTrailIndex--;
@@ -141,49 +205,62 @@ public class playerController : NetworkBehaviour {
 	}
 
 	void UpdateLinePositions() {
-		Vector3 curPosition = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
+		Vector3 curPosition = new Vector3 (exhaust.transform.position.x, exhaust.transform.position.y, exhaust.transform.position.z);
 
-		trails[trailIndex] = curPosition;
+		if (disableTrail == false) {
+			if (disableTrailToggle == true) {
+				trails.Clear ();
+				SetInitialLine ();
+				trailIndex = 1;
+				prevTrailIndex = 0;
 
-		if (CompareLinePositions ()) {
-			// Create trail/line objects for trailIndex.
-			if (trails.Capacity < trailMaxSize) {
-				trails.Add (curPosition);
-				LineRendererAdd (curPosition);
-			} else if (trails.Count < trails.Capacity && trails.Count < trailMaxSize) {
-				trails.Add (curPosition);
-				LineRendererAdd (curPosition);
+				disableTrailToggle = false;
 			}
+			trails [trailIndex] = curPosition;
 
-			trailIndex++;
-			prevTrailIndex++;
-			TrailInbounds ();
-			trails [prevTrailIndex] = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
+			if (CompareLinePositions ()) {
+				// Create trail/line objects for trailIndex.
+				if (trails.Capacity < trailMaxSize) {
+					trails.Add (curPosition);
+					LineRendererAdd (curPosition);
+				} else if (trails.Count < trails.Capacity && trails.Count < trailMaxSize) {
+					trails.Add (curPosition);
+					LineRendererAdd (curPosition);
+				}
 
-			//trails [trailIndex] = curPosition;
+				trailIndex++;
+				prevTrailIndex++;
+				TrailInbounds ();
+				trails [prevTrailIndex] = curPosition;
+
+				//trails [trailIndex] = curPosition;
 
 
-			//		Vector3 curPosition = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
-			//		if(trails.Count < trails.Capacity) {
-			//			trails.Add(curPosition);
-			//			LineRendererAdd (curPosition);
-			//		}else if(trails.Capacity < trailMaxSize)
-			//		{
-			//			//trails.Add(curPosition);
-			//			//LineRendererAdd (curPosition);
-			//		}else{
-			//			trails[trailIndex] = curPosition;
-			//		}
+				//		Vector3 curPosition = new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z);
+				//		if(trails.Count < trails.Capacity) {
+				//			trails.Add(curPosition);
+				//			LineRendererAdd (curPosition);
+				//		}else if(trails.Capacity < trailMaxSize)
+				//		{
+				//			//trails.Add(curPosition);
+				//			//LineRendererAdd (curPosition);
+				//		}else{
+				//			trails[trailIndex] = curPosition;
+				//		}
 
-			//if (CompareLinePositions ()) {
+				//if (CompareLinePositions ()) {
 
-			//}
+				//}
+			}
 		}
 	}
 
 	void SetInitialLine() {
-		trails.Add(new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z));
-		trails.Add(new Vector3 (myRigidBody.position.x, myRigidBody.position.y, myRigidBody.position.z));
+		Vector3 initialLine = new Vector3 (exhaust.transform.position.x, exhaust.transform.position.y, exhaust.transform.position.z);
+		trails.Add(initialLine);
+		trails.Add(initialLine);
+		collisionTrails.Add (pCollisionTrail);
+		//configureCollisionTrail ();
 		myLineRenderer.numPositions = trails.Count;
 	}
 
@@ -197,6 +274,9 @@ public class playerController : NetworkBehaviour {
 	void LineRendererAdd(Vector3 vector) {
 		myLineRenderer.numPositions++;
 		myLineRenderer.SetPosition (myLineRenderer.numPositions - 1, vector);
+	}
+
+	void ConfigureCollisionTrail(Vector3 vecOne, Vector3 vecTwo ) {
 	}
 		
 }
