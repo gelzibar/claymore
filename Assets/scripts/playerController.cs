@@ -310,19 +310,19 @@ public class playerController : NetworkBehaviour {
 		trails.Add(initialLine);
 		trails.Add(initialLine);
 		//configureCollisionTrail ();
-		myLineRenderer.numPositions = trails.Count;
+		myLineRenderer.positionCount = trails.Count;
 	}
 
 	void TrailsToLinePositions() {
-		for(int i = 0; i < myLineRenderer.numPositions; i++){
+		for(int i = 0; i < myLineRenderer.positionCount; i++){
 //			myLineRenderer.GetPosition(i) = trails [i];
 			myLineRenderer.SetPosition (i, trails [i]);
 		}
 	}
 
 	void LineRendererAdd(Vector3 vector) {
-		myLineRenderer.numPositions++;
-		myLineRenderer.SetPosition (myLineRenderer.numPositions - 1, vector);
+		myLineRenderer.positionCount++;
+		myLineRenderer.SetPosition (myLineRenderer.positionCount - 1, vector);
 	}
 
 	void ConfigureCollisionTrail(Vector3 vecOne, Vector3 vecTwo ) {
