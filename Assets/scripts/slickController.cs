@@ -29,7 +29,6 @@ public class slickController : NetworkBehaviour {
 	}
 
 	void OnCollisionEnter(Collision col) {
-		Debug.Log ("Capsule Col with " + col.gameObject.ToString());
 		if (hasTriggered == false) {
 			mySlick = Instantiate (pSlick);
 			mySlick.transform.position = col.contacts [0].point;
