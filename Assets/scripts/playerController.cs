@@ -18,11 +18,13 @@ public class playerController : NetworkBehaviour {
 	public List<Vector3> trails;
 	public List<GameObject> slickTrails;
 	public GameObject pSlickTrail;
+	public GameObject pBullet;
 	public int trailIndex, prevTrailIndex;
 	public float minDistance;
 	public float zRearOffset;
 	//private bool disableTrail, disableTrailToggle;
 	private trail_maker sTrails;
+	private inputTransmission sInput;
 	private GameObject exhaust;
 	public List<tire> tires;
 	public bool grounded;
@@ -63,6 +65,7 @@ public class playerController : NetworkBehaviour {
 		} 
 
 		sTrails = GetComponent<trail_maker> ();
+		sInput = GetComponent<inputTransmission> ();
 		myLineRenderer = GetComponentInChildren<LineRenderer> ();
 		exhaust = transform.Find ("exhaust").gameObject;
 		sTrails.enabled = false;
@@ -82,6 +85,8 @@ public class playerController : NetworkBehaviour {
 		SetInitialLine ();
 		TrailsToLinePositions ();
 
+		//ClientScene.RegisterPrefab (pBullet);
+
 		foreach(Transform child in transform){
 			if(child.gameObject.tag == "tire"){
 				tires.Add(child.GetComponent<tire>());
@@ -98,7 +103,7 @@ public class playerController : NetworkBehaviour {
 
 		//grounded = ManageTires ();
 		grounded = GroundViaSphereCase();
-		Debug.Log ("Grounding: " + grounded);
+		//Debug.Log ("Grounding: " + grounded);
 
 		if(grounded == true) {
 			if (!isLocalPlayer) {
@@ -129,6 +134,27 @@ public class playerController : NetworkBehaviour {
 		if (!isLocalPlayer)
 		{
 			return;
+		}
+
+		// Shooting Mechanics
+		if (Input.GetMouseButtonDown (0)) {
+			//sInput.space_key = true;
+			//			if (sInput.space_key == true) {
+			//				CmdFireBullet ();
+			//			}
+			CmdFireBullet (transform.Find ("turret_face").position);
+
+		} else if (Input.GetMouseButtonUp (0)) {
+//			sInput.space_key = false;
+		}
+
+		if (Input.GetMouseButtonDown (1)) {
+			//sInput.space_key = true;
+			//			if (sInput.space_key == true) {
+			//				CmdFireBullet ();
+			//			}
+			RpcFireBullet2 (transform.Find ("turret_face").position);
+
 		}
 
 
@@ -178,14 +204,13 @@ public class playerController : NetworkBehaviour {
 			transform.position = new Vector3 (-23, 50, 436);
 		}
 
-//		if(Input.GetKeyDown(KeyCode.F12)) {
-//			if(triggerF12 == false) {
-//				myRigidBody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-//				triggerF12 = true;
-//			}else if (triggerF12 == true) {
-//				myRigidBody.constraints = RigidbodyConstraints.None;
-//				triggerF12 = true;
-//			}
+//		// Shooting Mechanics
+//		if (Input.GetMouseButtonDown(0)) {
+//			GameObject curBullet = Instantiate (pBullet, GameObject.Find ("Ammo Container").transform);
+//			curBullet.GetComponent<Rigidbody> ().rotation = myRigidBody.rotation;
+//			curBullet.GetComponent<Rigidbody> ().position = transform.Find ("turret_face").position;
+//			curBullet.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward * 0.05f, ForceMode.Impulse);
+//
 //
 //		}
 	}
@@ -282,19 +307,19 @@ public class playerController : NetworkBehaviour {
 		trails.Add(initialLine);
 		trails.Add(initialLine);
 		//configureCollisionTrail ();
-		myLineRenderer.positionCount = trails.Count;
+		myLineRenderer.numPositions = trails.Count;
 	}
 
 	void TrailsToLinePositions() {
-		for(int i = 0; i < myLineRenderer.positionCount; i++){
+		for(int i = 0; i < myLineRenderer.numPositions; i++){
 //			myLineRenderer.GetPosition(i) = trails [i];
 			myLineRenderer.SetPosition (i, trails [i]);
 		}
 	}
 
 	void LineRendererAdd(Vector3 vector) {
-		myLineRenderer.positionCount++;
-		myLineRenderer.SetPosition (myLineRenderer.positionCount - 1, vector);
+		myLineRenderer.numPositions++;
+		myLineRenderer.SetPosition (myLineRenderer.numPositions - 1, vector);
 	}
 
 	void ConfigureCollisionTrail(Vector3 vecOne, Vector3 vecTwo ) {
@@ -320,6 +345,34 @@ public class playerController : NetworkBehaviour {
 		return Physics.SphereCast (myRigidBody.position, 0.1f, Vector3.down,out hit, 1.4f); 
 
 		//origin: radius: direction hitInfo maxDistance
+	}
+
+
+	[Command]
+	void CmdFireBullet(Vector3 position) {
+		//GameObject curBullet = Instantiate (pBullet, GameObject.Find ("Ammo Container").transform);
+		GameObject curBullet = (GameObject)Instantiate (pBullet);
+		//curBullet.GetComponent<Rigidbody> ().rotation = myRigidBody.rotation;
+		//curBullet.GetComponent<Rigidbody> ().position = position;
+		//curBullet.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward * 0.05f, ForceMode.Impulse);
+
+		NetworkServer.Spawn (pBullet);
+	}
+
+	[ClientRpc]
+	void RpcFireBullet2(Vector3 position) {
+		//GameObject curBullet = Instantiate (pBullet, GameObject.Find ("Ammo Container").transform);
+		GameObject curBullet = (GameObject)Instantiate (pBullet);
+		//curBullet.GetComponent<Rigidbody> ().rotation = myRigidBody.rotation;
+		curBullet.GetComponent<Rigidbody> ().position = position;
+		//curBullet.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward * 0.05f, ForceMode.Impulse);
+
+		NetworkServer.Spawn (pBullet);
+	}
+
+	public void OnStartClient()
+	{
+		//ClientScene.RegisterPrefab(pBullet);
 	}
 		
 }
