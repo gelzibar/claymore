@@ -5,14 +5,10 @@ using UnityEngine;
 
 public class cameraController : MonoBehaviour {
 
-	private Rigidbody myRigidbody;
 	public GameObject trackedObj;
-	private Vector3 offset;
 
 	// Use this for initialization
 	void Start () {
-		offset = new Vector3 (0, 25f, 25f);
-		myRigidbody = GetComponent<Rigidbody>();
 		
 	}
 
