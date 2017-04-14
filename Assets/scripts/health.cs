@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 public class health : NetworkBehaviour {
 
 	public const int maxHealth = 100;
-	[SyncVar]
+	[SyncVar(hook = "OnChangeHealth")]
 	public int curHealth = maxHealth;
 
 	public void TakeDamage(int amount)
@@ -17,8 +17,20 @@ public class health : NetworkBehaviour {
 		curHealth -= amount;
 		if (curHealth <= 0)
 		{
-			curHealth = 0;
-			Debug.Log("Dead!");
+			curHealth = maxHealth;
+			RpcRespawn ();
+		}
+	}
+
+	void OnChangeHealth(int currentHealth) {
+		curHealth = currentHealth;
+	}
+
+	[ClientRpc]
+	void RpcRespawn(){
+		if (isLocalPlayer) {
+			// move back to World Coord zero
+			transform.position = new Vector3(-32f, 2f, 11.5f);
 		}
 	}
 }

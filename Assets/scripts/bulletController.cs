@@ -1,17 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-//using UnityEngine.Networking;
+using UnityEngine.Networking;
 
-public class bulletController : MonoBehaviour {
+public class bulletController : NetworkBehaviour {
 
-	// Use this for initialization
-	void Start () {
-		
+	void OnCollisionEnter(Collision col) {
+		if (col.gameObject.CompareTag ("player")) {
+			col.gameObject.GetComponent<health> ().TakeDamage (25);
+			Destroy (this.gameObject);
+		}
 	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+
 }
