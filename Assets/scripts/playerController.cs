@@ -85,8 +85,6 @@ public class playerController : NetworkBehaviour {
 		SetInitialLine ();
 		TrailsToLinePositions ();
 
-		//ClientScene.RegisterPrefab (pBullet);
-
 		foreach(Transform child in transform){
 			if(child.gameObject.tag == "tire"){
 				tires.Add(child.GetComponent<tire>());
@@ -142,19 +140,10 @@ public class playerController : NetworkBehaviour {
 			//			if (sInput.space_key == true) {
 			//				CmdFireBullet ();
 			//			}
-			CmdFireBullet (transform.Find ("turret_face").position);
+			CmdFireBullet ();
 
 		} else if (Input.GetMouseButtonUp (0)) {
 //			sInput.space_key = false;
-		}
-
-		if (Input.GetMouseButtonDown (1)) {
-			//sInput.space_key = true;
-			//			if (sInput.space_key == true) {
-			//				CmdFireBullet ();
-			//			}
-			RpcFireBullet2 (transform.Find ("turret_face").position);
-
 		}
 
 
@@ -349,30 +338,12 @@ public class playerController : NetworkBehaviour {
 
 
 	[Command]
-	void CmdFireBullet(Vector3 position) {
-		//GameObject curBullet = Instantiate (pBullet, GameObject.Find ("Ammo Container").transform);
-		GameObject curBullet = (GameObject)Instantiate (pBullet);
-		//curBullet.GetComponent<Rigidbody> ().rotation = myRigidBody.rotation;
-		//curBullet.GetComponent<Rigidbody> ().position = position;
-		//curBullet.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward * 0.05f, ForceMode.Impulse);
+	void CmdFireBullet() {
+		GameObject curBullet = Instantiate (pBullet, GameObject.Find ("Ammo Container").transform);
+		curBullet.GetComponent<Rigidbody> ().position = transform.Find("turret_face").position;
+		curBullet.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward * 0.05f, ForceMode.Impulse);
 
-		NetworkServer.Spawn (pBullet);
-	}
-
-	[ClientRpc]
-	void RpcFireBullet2(Vector3 position) {
-		//GameObject curBullet = Instantiate (pBullet, GameObject.Find ("Ammo Container").transform);
-		GameObject curBullet = (GameObject)Instantiate (pBullet);
-		//curBullet.GetComponent<Rigidbody> ().rotation = myRigidBody.rotation;
-		curBullet.GetComponent<Rigidbody> ().position = position;
-		//curBullet.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward * 0.05f, ForceMode.Impulse);
-
-		NetworkServer.Spawn (pBullet);
-	}
-
-	public void OnStartClient()
-	{
-		//ClientScene.RegisterPrefab(pBullet);
+		NetworkServer.Spawn (curBullet);
 	}
 		
 }
