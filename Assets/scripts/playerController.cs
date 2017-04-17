@@ -20,7 +20,7 @@ public class playerController : NetworkBehaviour
 
 
 	// Trail
-	const int trailMaxSize = 500;
+	const int trailMaxSize = 10;
 	public GameObject myLineRendererObject;
 	private LineRenderer myLineRenderer;
 	public List<Vector3> trails;
@@ -103,8 +103,8 @@ public class playerController : NetworkBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		UpdateLinePositions ();
-		TrailsToLinePositions ();
+		//UpdateLinePositions ();
+		//TrailsToLinePositions ();
 
 		if (!isLocalPlayer) {
 			return;
@@ -119,8 +119,8 @@ public class playerController : NetworkBehaviour
 
 		if (Input.GetKeyDown (KeyCode.Space)) {
 
-			sTrails.enabled = !sTrails.enabled;
-			sTrails.toggle = true;
+			//sTrails.enabled = !sTrails.enabled;
+			//sTrails.toggle = true;
 
 		}
 
