@@ -8,7 +8,7 @@ public class playerController : NetworkBehaviour
 {
 
 	// Physics and movement
-	private Rigidbody myRigidBody;
+	private Rigidbody myRigidbody;
 	private float torque;
 	private float accel;
 	private List<tire> tires;
@@ -28,30 +28,38 @@ public class playerController : NetworkBehaviour
 	public GameObject pSlickTrail;
 	private int trailIndex, prevTrailIndex;
 	private float minDistance;
-	//private bool disableTrail, disableTrailToggle;
 	private trail_maker sTrails;
 	private GameObject exhaust;
 
 	// Use this for initialization
 	void Start ()
 	{
-		myRigidBody = GetComponent<Rigidbody> ();
-
+        // Only assign active camera to the local player
 		if (!isLocalPlayer) {
 			
 			myCam.SetActive (false);
-		} 
+		}
 
-		sTrails = GetComponent<trail_maker> ();
+        // Physics and movement definitions
+        myRigidbody = GetComponent<Rigidbody>();
+        torque = 300.0f;
+        accel = 400.0f;
+        myRigidbody.maxAngularVelocity = 2.5f;
+        grounded = false;
+
+        foreach (Transform child in transform)
+        {
+            if (child.gameObject.tag == "tire")
+            {
+                tires.Add(child.GetComponent<tire>());
+            }
+        }
+
+        sTrails = GetComponent<trail_maker> ();
 		myLineRenderer = GetComponentInChildren<LineRenderer> ();
 		exhaust = transform.Find ("exhaust").gameObject;
 		sTrails.enabled = false;
 		sTrails.toggle = false;
-
-		torque = 300.0f;
-		accel = 400.0f;
-		myRigidBody.maxAngularVelocity = 2.5f;
-		grounded = false;
 
 		trails = new List<Vector3> ();
 		trailIndex = 1;
@@ -60,13 +68,6 @@ public class playerController : NetworkBehaviour
 		slickTrails = new List<GameObject> ();
 		SetInitialLine ();
 		TrailsToLinePositions ();
-
-		foreach (Transform child in transform) {
-			if (child.gameObject.tag == "tire") {
-				tires.Add (child.GetComponent<tire> ());
-			}
-		}
-
 
 	}
 
@@ -85,53 +86,61 @@ public class playerController : NetworkBehaviour
 	void FixedUpdate ()
 	{
 
-		grounded = GroundViaSphereCase ();
+		grounded = GroundViaSphereCast ();
 
 		if (grounded == true) {
 			if (!isLocalPlayer) {
 				return;
 			}
-			float forward = Input.GetAxis ("Vertical");
-			float turn = Input.GetAxis ("Horizontal");
-
-			myRigidBody.AddRelativeForce (Vector3.forward * accel * forward, ForceMode.Force);
-			myRigidBody.AddRelativeTorque (Vector3.up * turn * torque, ForceMode.Force);
-
+            GetPlayerInputFixed();
 		}
 	}
 	
 	// Update is called once per frame
 	void Update ()
 	{
-		//UpdateLinePositions ();
-		//TrailsToLinePositions ();
+        // Disable Butter Trails functionality.
+		// UpdateLinePositions ();
+		// TrailsToLinePositions ();
 
 		if (!isLocalPlayer) {
 			return;
 		}
-
-		// Shooting Mechanics
-		if (Input.GetMouseButtonDown (0)) {
-			CmdFireBullet (transform.Find ("turret_face").position, myRigidBody.rotation);
-
-		}
-
-
-		if (Input.GetKeyDown (KeyCode.Space)) {
-
-			//sTrails.enabled = !sTrails.enabled;
-			//sTrails.toggle = true;
-
-		}
-
-		if (Input.GetKeyDown (KeyCode.F1)) {
-			transform.rotation = new Quaternion ();
-		}
-		if (Input.GetKeyDown (KeyCode.Escape)) {
-			transform.position = new Vector3 (-32f, 2f, 11.5f);
-		}
+        GetPlayerInputStandard();
 
 	}
+
+    void GetPlayerInputFixed() {
+        float forward = Input.GetAxis("Vertical");
+        float turn = Input.GetAxis("Horizontal");
+
+        myRigidbody.AddRelativeForce(Vector3.forward * accel * forward, ForceMode.Force);
+        myRigidbody.AddRelativeTorque(Vector3.up * turn * torque, ForceMode.Force);
+    }
+
+    void GetPlayerInputStandard() {
+        // Shooting Mechanics
+        if (Input.GetMouseButtonDown(0))
+        {
+            CmdFireBullet(transform.Find("turret_face").position, myRigidbody.rotation);
+        }
+
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            //sTrails.enabled = !sTrails.enabled;
+            //sTrails.toggle = true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            transform.rotation = new Quaternion();
+        }
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            transform.position = new Vector3(-32f, 2f, 11.5f);
+        }
+    }
 
 	void TrailInbounds ()
 	{
@@ -150,7 +159,7 @@ public class playerController : NetworkBehaviour
 	bool CompareLinePositions ()
 	{
 		bool returnValue = false;
-		float curDistance = Vector3.Distance (myRigidBody.position, trails [prevTrailIndex]);
+		float curDistance = Vector3.Distance (myRigidbody.position, trails [prevTrailIndex]);
 
 		if (curDistance > minDistance) {
 			returnValue = true;
@@ -189,7 +198,7 @@ public class playerController : NetworkBehaviour
 				TrailInbounds ();
 				trails [prevTrailIndex] = curPosition;
 
-				slickTrails.Add (Instantiate (pSlickTrail, curPosition, myRigidBody.rotation));
+				slickTrails.Add (Instantiate (pSlickTrail, curPosition, myRigidbody.rotation));
 
 			}
 		}
@@ -216,11 +225,11 @@ public class playerController : NetworkBehaviour
 		myLineRenderer.SetPosition (myLineRenderer.numPositions - 1, vector);
 	}
 
-	bool GroundViaSphereCase ()
+	bool GroundViaSphereCast ()
 	{
 		RaycastHit hit;
 
-		return Physics.SphereCast (myRigidBody.position, 0.1f, Vector3.down, out hit, 1.4f); 
+		return Physics.SphereCast (myRigidbody.position, 0.1f, Vector3.down, out hit, 1.4f); 
 
 	}
 
@@ -236,3 +245,4 @@ public class playerController : NetworkBehaviour
 	}
 		
 }
+ 
