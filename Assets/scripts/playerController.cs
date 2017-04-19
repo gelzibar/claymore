@@ -13,6 +13,7 @@ public class playerController : NetworkBehaviour
 	private float accel;
 	private List<tire> tires;
 	private bool grounded;
+	private int groundedRating;
 
 	// Related Objects
 	public GameObject myCam;
@@ -46,7 +47,10 @@ public class playerController : NetworkBehaviour
         accel = 400.0f;
         myRigidbody.maxAngularVelocity = 2.5f;
         grounded = false;
+		groundedRating = 0;
 
+
+		tires = new List<tire> ();
         foreach (Transform child in transform)
         {
             if (child.gameObject.tag == "tire")
@@ -85,8 +89,24 @@ public class playerController : NetworkBehaviour
 
 	void FixedUpdate ()
 	{
+		grounded = false;
+		groundedRating = 0;
+		foreach (tire tire in tires) {
+			if (grounded == false) {
+				grounded = tire.grounded;
+			}
+			if (tire.grounded == true) {
+				groundedRating++;
+			}
 
-		grounded = GroundViaSphereCast ();
+		}
+//		bool[] groundedTires = new bool[4];
+//		Debug.Log (tires.Count);
+//		for (int i = 0; i < tires.Count; i++) {
+//			groundedTires[i] = tires[i].GroundViaSphereCast();
+//		}
+//
+//		grounded = groundedTires [0] || groundedTires [1] || groundedTires [2] || groundedTires [3];
 
 		if (grounded == true) {
 			if (!isLocalPlayer) {
@@ -114,8 +134,10 @@ public class playerController : NetworkBehaviour
         float forward = Input.GetAxis("Vertical");
         float turn = Input.GetAxis("Horizontal");
 
-        myRigidbody.AddRelativeForce(Vector3.forward * accel * forward, ForceMode.Force);
-        myRigidbody.AddRelativeTorque(Vector3.up * turn * torque, ForceMode.Force);
+		float groundedAdjust = groundedRating * 0.5f;
+
+		myRigidbody.AddRelativeForce(Vector3.forward * accel * forward * groundedAdjust, ForceMode.Force);
+		myRigidbody.AddRelativeTorque(Vector3.up * turn * torque  * groundedAdjust, ForceMode.Force);
     }
 
     void GetPlayerInputStandard() {
@@ -225,11 +247,11 @@ public class playerController : NetworkBehaviour
 		myLineRenderer.SetPosition (myLineRenderer.numPositions - 1, vector);
 	}
 
-	bool GroundViaSphereCast ()
+	bool GroundViaSphereCast (Vector3 origin)
 	{
 		RaycastHit hit;
 
-		return Physics.SphereCast (myRigidbody.position, 0.1f, Vector3.down, out hit, 1.4f); 
+		return Physics.SphereCast (origin, 0.1f, Vector3.down, out hit, 1.4f); 
 
 	}
 

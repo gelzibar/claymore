@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class tire : MonoBehaviour {
 	public bool grounded;
-	public int groundedRating;
 
 	void OnCollisionEnter(Collision col) {
 //		grounded = true;
@@ -24,6 +23,10 @@ public class tire : MonoBehaviour {
 //		groundedRating = 0;
 		
 	}
+
+	void FixedUpdate() {
+		grounded = GroundViaSphereCast ();
+	}
 	
 	// Update is called once per frame
 	void Update () {
@@ -33,5 +36,13 @@ public class tire : MonoBehaviour {
 	public int ReportGroundedRating() {
 		//return groundedRating;
 		return 0;
+	}
+
+	public bool GroundViaSphereCast ()
+	{
+		RaycastHit hit;
+
+		return Physics.SphereCast (transform.position, 0.1f, transform.up * -1, out hit, 1.1f); 
+
 	}
 }
