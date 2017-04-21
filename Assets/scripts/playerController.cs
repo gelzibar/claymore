@@ -32,6 +32,9 @@ public class playerController : NetworkBehaviour
 	private trail_maker sTrails;
 	private GameObject exhaust;
 
+	// Sound
+	public GameObject sound_trigger;
+
 	// Use this for initialization
 	void Start ()
 	{
@@ -145,6 +148,9 @@ public class playerController : NetworkBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             CmdFireBullet(transform.Find("turret_face").position, myRigidbody.rotation);
+			AudioSource audio = sound_trigger.GetComponent<AudioSource> ();
+			audio.Play ();
+
         }
 
 
