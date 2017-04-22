@@ -8,15 +8,15 @@ public class materialHandler : NetworkBehaviour {
 
 	// Damage Effect
 	public Material whiteMaterial, defaultMaterial, blackMaterial;
+    public float strobeLocalTime;
 
-	[SyncVar(hook = "OnChangeStrobeToggle")]
+    [SyncVar(hook = "OnChangeStrobeToggle")]
 	public bool strobeToggle;
-
-	[SyncVar(hook = "OnChangeStrobeTime")]
-	public float strobeTime;
 
 	// Use this for initialization
 	void Start () {
+
+        defaultMaterial = GetComponent<playerController>().myStandardMaterial;
 
 		if (!isLocalPlayer) {
 			return;
@@ -38,8 +38,12 @@ public class materialHandler : NetworkBehaviour {
 			return;
 		}
 		if(strobeToggle == true) {
-//			CmdCheckTime ();
-		}
+            if (strobeLocalTime >= 0.5f) {
+                StopStrobe();
+                strobeLocalTime = 0;
+            }
+            strobeLocalTime += Time.deltaTime;
+        }
 		
 	}
 
@@ -54,13 +58,13 @@ public class materialHandler : NetworkBehaviour {
 
 	public void SendStrobe(bool newToggle, float newTime) {
 		CmdSetStrobeToggle (newToggle);
-		CmdSetStrobeTime (newTime);
+        strobeLocalTime = newTime;
 	}
 
 	public void ToggleStrobe() {
 		if (strobeToggle == true) {
 			StopStrobe ();
-		} else if (strobeToggle == false) {
+		} else {
 			StartStrobe ();
 		}
 	}
@@ -68,18 +72,18 @@ public class materialHandler : NetworkBehaviour {
 
 
 	// Will probably delete this. Caused too much trouble
-	Material SwapStrobe(Material curMaterial) {
-		Material newMaterial = defaultMaterial;
-		if (curMaterial.Equals(defaultMaterial)) {
-			newMaterial = whiteMaterial;
-		} else if (curMaterial.Equals(blackMaterial)) {
-			newMaterial = whiteMaterial;
-		} else if (curMaterial.Equals(whiteMaterial)) {
-			newMaterial = blackMaterial;
-		}
+	//Material SwapStrobe(Material curMaterial) {
+  //      Material newMaterial = defaultMaterial;
+  //      if (curMaterial.Equals(defaultMaterial)) {
+  //          newMaterial = whiteMaterial;
+		//} else if (curMaterial.Equals(blackMaterial)) {
+		//	newMaterial = whiteMaterial;
+		//} else if (curMaterial.Equals(whiteMaterial)) {
+		//	newMaterial = blackMaterial;
+		//}
 
-		return newMaterial;
-	}
+		//return newMaterial;
+	//}
 
 	// Will probably delete this. Caused too much trouble
 //	public void DamageStrobeEffect (float timeDiff) {
@@ -103,33 +107,10 @@ public class materialHandler : NetworkBehaviour {
 		strobeToggle = newToggle;
 	}
 
-	void OnChangeStrobeTime(float newTime) {
-		strobeTime = newTime;
-	}
-
 	[Command]
 	void CmdSetStrobeToggle (bool newToggle)
 	{
 		strobeToggle = newToggle;
 	}
-
-	[Command]
-	void CmdSetStrobeTime (float newTime) {
-		strobeTime = newTime;
-	}
-
-//	[Command]
-//	void CmdCheckTime() {
-//		Debug.Log (Network.time + ":" + strobeTime);
-//		if (Network.time - strobeTime >= .50f) {
-//			RpcStopStrobe ();
-//		}
-//	}
-
-//	[ClientRpc]
-//	void RpcStopStrobe () {
-//		StopStrobe ();
-//	}
-
 
 }

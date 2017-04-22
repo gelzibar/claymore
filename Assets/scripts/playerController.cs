@@ -32,6 +32,9 @@ public class playerController : NetworkBehaviour
 	private trail_maker sTrails;
 	private GameObject exhaust;
 
+    // Personalization
+    public Material myStandardMaterial;
+
 	// Use this for initialization
 	void Start ()
 	{
@@ -72,7 +75,7 @@ public class playerController : NetworkBehaviour
 		slickTrails = new List<GameObject> ();
 		SetInitialLine ();
 		TrailsToLinePositions ();
-
+        
 	}
 
 	void OnGUI ()
@@ -154,13 +157,21 @@ public class playerController : NetworkBehaviour
             //sTrails.enabled = !sTrails.enabled;
             //sTrails.toggle = true;
         }
+        if (Input.GetKeyDown(KeyCode.R)) {
+            GetComponent<skinHandler>().SetSkinValue(1);
+            SetAllMaterial(myStandardMaterial);
+        }
 
-		if (Input.GetKeyDown (KeyCode.E)) {
-			GetComponent<materialHandler>().ToggleStrobe ();
-		}
+        if (Input.GetKeyDown (KeyCode.E)) {
+            GetComponent<skinHandler>().SetSkinValue(0);
+            SetAllMaterial(myStandardMaterial);
+        }
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            transform.rotation = new Quaternion();
+            float offsetX = transform.rotation.eulerAngles.x * -1;
+            float offsetZ = transform.rotation.eulerAngles.z * -1;
+            transform.Rotate(new Vector3(offsetX, 0, offsetZ ));
+
         }
         if (Input.GetKeyDown(KeyCode.Escape))
         {
