@@ -32,9 +32,6 @@ public class playerController : NetworkBehaviour
 	private trail_maker sTrails;
 	private GameObject exhaust;
 
-	// Sound
-	public GameObject sound_trigger;
-
 	// Use this for initialization
 	void Start ()
 	{
@@ -148,8 +145,6 @@ public class playerController : NetworkBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             CmdFireBullet(transform.Find("turret_face").position, myRigidbody.rotation);
-			AudioSource audio = sound_trigger.GetComponent<AudioSource> ();
-			audio.Play ();
 
         }
 
@@ -160,6 +155,9 @@ public class playerController : NetworkBehaviour
             //sTrails.toggle = true;
         }
 
+		if (Input.GetKeyDown (KeyCode.E)) {
+			GetComponent<materialHandler>().ToggleStrobe ();
+		}
         if (Input.GetKeyDown(KeyCode.F1))
         {
             transform.rotation = new Quaternion();
@@ -261,6 +259,16 @@ public class playerController : NetworkBehaviour
 
 	}
 
+	public void SetAllMaterial(Material newMaterial) {
+		GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("FL_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("FR_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("BL_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("BR_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("L_Cylinder").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("R_Cylinder").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("Face").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+	}
 
 	[Command]
 	void CmdFireBullet (Vector3 position, Quaternion rotation)
@@ -271,6 +279,8 @@ public class playerController : NetworkBehaviour
 
 		NetworkServer.Spawn (curBullet);
 	}
+
+
 		
 }
  
