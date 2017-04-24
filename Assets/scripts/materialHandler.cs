@@ -5,10 +5,11 @@ using UnityEngine.Networking;
 
 public class materialHandler : NetworkBehaviour {
 
-
 	// Damage Effect
-	public Material whiteMaterial, defaultMaterial, blackMaterial;
+	public Material whiteMaterial, blackMaterial;
     public float strobeLocalTime;
+
+	playerController myPC;
 
     [SyncVar(hook = "OnChangeStrobeToggle")]
 	public bool strobeToggle;
@@ -16,8 +17,7 @@ public class materialHandler : NetworkBehaviour {
 	// Use this for initialization
 	void Start () {
 
-        defaultMaterial = GetComponent<playerController>().myStandardMaterial;
-
+		myPC = GetComponent<playerController> ();
 		if (!isLocalPlayer) {
 			return;
 		}
@@ -29,9 +29,9 @@ public class materialHandler : NetworkBehaviour {
 	void Update () {
 
 		if (strobeToggle == true) {
-			GetComponent<playerController>().SetAllMaterial(whiteMaterial);
+			myPC.SetAllMaterial(whiteMaterial);
 		} else if (strobeToggle == false) {
-			GetComponent<playerController>().SetAllMaterial(defaultMaterial);
+			myPC.SetAllMaterial(myPC.myStandardMaterial);
 		}
 
 		if (!isLocalPlayer) {

@@ -18,19 +18,8 @@ public class playerController : NetworkBehaviour
 	// Related Objects
 	public GameObject myCam;
 	public GameObject pBullet;
-
-
-	// Trail
-	const int trailMaxSize = 10;
-	public GameObject myLineRendererObject;
-	private LineRenderer myLineRenderer;
-	public List<Vector3> trails;
-	public List<GameObject> slickTrails;
-	public GameObject pSlickTrail;
-	private int trailIndex, prevTrailIndex;
-	private float minDistance;
-	private trail_maker sTrails;
-	private GameObject exhaust;
+	private float primaryCD, primaryTimer;
+	private bool primaryToggle;
 
     // Personalization
     public Material myStandardMaterial;
@@ -43,6 +32,8 @@ public class playerController : NetworkBehaviour
 			
 			myCam.SetActive (false);
 		}
+
+		//GameObject.Find ("Dropdown").SetActive (false);
 
         // Physics and movement definitions
         myRigidbody = GetComponent<Rigidbody>();
@@ -62,20 +53,10 @@ public class playerController : NetworkBehaviour
             }
         }
 
-        sTrails = GetComponent<trail_maker> ();
-		myLineRenderer = GetComponentInChildren<LineRenderer> ();
-		exhaust = transform.Find ("exhaust").gameObject;
-		sTrails.enabled = false;
-		sTrails.toggle = false;
+		primaryCD = 0.60f;
+		primaryTimer = 0;
+		primaryToggle = false;
 
-		trails = new List<Vector3> ();
-		trailIndex = 1;
-		prevTrailIndex = 0;
-		minDistance = 10.0f;
-		slickTrails = new List<GameObject> ();
-		SetInitialLine ();
-		TrailsToLinePositions ();
-        
 	}
 
 	void OnGUI ()
@@ -101,6 +82,7 @@ public class playerController : NetworkBehaviour
 			if (tire.grounded == true) {
 				groundedRating++;
 			}
+
 
 		}
 //		bool[] groundedTires = new bool[4];
@@ -145,26 +127,24 @@ public class playerController : NetworkBehaviour
 
     void GetPlayerInputStandard() {
         // Shooting Mechanics
-        if (Input.GetMouseButtonDown(0))
-        {
-            CmdFireBullet(transform.Find("turret_face").position, myRigidbody.rotation);
+		if (primaryToggle == false) {
+			if (Input.GetMouseButtonDown (0)) {
+				primaryToggle = true;
+				CmdFireBullet (transform.Find ("turret_face").position, myRigidbody.rotation);
 
-        }
+			}
+		} else if (primaryToggle == true && primaryTimer >= primaryCD) {
+			primaryToggle = false;
+			primaryTimer = 0;
+		} else {
+			primaryTimer += Time.deltaTime;
+		}
 
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
             //sTrails.enabled = !sTrails.enabled;
             //sTrails.toggle = true;
-        }
-        if (Input.GetKeyDown(KeyCode.R)) {
-            GetComponent<skinHandler>().SetSkinValue(1);
-            SetAllMaterial(myStandardMaterial);
-        }
-
-        if (Input.GetKeyDown (KeyCode.E)) {
-            GetComponent<skinHandler>().SetSkinValue(0);
-            SetAllMaterial(myStandardMaterial);
         }
         if (Input.GetKeyDown(KeyCode.F1))
         {
@@ -179,88 +159,6 @@ public class playerController : NetworkBehaviour
         }
     }
 
-	void TrailInbounds ()
-	{
-		int maxIndex = trailMaxSize - 1;
-
-		if (trailIndex > maxIndex) {
-			trails.RemoveAt (0);
-			trails.Add (new Vector3 (exhaust.transform.position.x, exhaust.transform.position.y, exhaust.transform.position.z));
-
-			trailIndex--;
-			prevTrailIndex--;
-			//trailIndex = 0;
-		}
-	}
-
-	bool CompareLinePositions ()
-	{
-		bool returnValue = false;
-		float curDistance = Vector3.Distance (myRigidbody.position, trails [prevTrailIndex]);
-
-		if (curDistance > minDistance) {
-			returnValue = true;
-		}
-
-		return returnValue;
-	}
-
-	void UpdateLinePositions ()
-	{
-		Vector3 curPosition = new Vector3 (exhaust.transform.position.x, exhaust.transform.position.y, exhaust.transform.position.z);
-
-		if (sTrails.enabled == false) {
-			if (sTrails.toggle == true) {
-				trails.Clear ();
-				SetInitialLine ();
-				trailIndex = 1;
-				prevTrailIndex = 0;
-
-				sTrails.toggle = false;
-			}
-			trails [trailIndex] = curPosition;
-
-			if (CompareLinePositions ()) {
-				// Create trail/line objects for trailIndex.
-				if (trails.Capacity < trailMaxSize) {
-					trails.Add (curPosition);
-					LineRendererAdd (curPosition);
-				} else if (trails.Count < trails.Capacity && trails.Count < trailMaxSize) {
-					trails.Add (curPosition);
-					LineRendererAdd (curPosition);
-				}
-
-				trailIndex++;
-				prevTrailIndex++;
-				TrailInbounds ();
-				trails [prevTrailIndex] = curPosition;
-
-				slickTrails.Add (Instantiate (pSlickTrail, curPosition, myRigidbody.rotation));
-
-			}
-		}
-	}
-
-	void SetInitialLine ()
-	{
-		Vector3 initialLine = new Vector3 (exhaust.transform.position.x, exhaust.transform.position.y, exhaust.transform.position.z);
-		trails.Add (initialLine);
-		trails.Add (initialLine);
-		myLineRenderer.numPositions = trails.Count;
-	}
-
-	void TrailsToLinePositions ()
-	{
-		for (int i = 0; i < myLineRenderer.numPositions; i++) {
-			myLineRenderer.SetPosition (i, trails [i]);
-		}
-	}
-
-	void LineRendererAdd (Vector3 vector)
-	{
-		myLineRenderer.numPositions++;
-		myLineRenderer.SetPosition (myLineRenderer.numPositions - 1, vector);
-	}
 
 	bool GroundViaSphereCast (Vector3 origin)
 	{

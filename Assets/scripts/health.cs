@@ -5,9 +5,10 @@ using UnityEngine.Networking;
 
 public class health : NetworkBehaviour {
 
-	public const int maxHealth = 100;
+	public const int maxHealth = 125;
+	public const int startHealth = 100;
 	[SyncVar(hook = "OnChangeHealth")]
-	public int curHealth = maxHealth;
+	public int curHealth = startHealth;
 
 	public void TakeDamage(int amount)
 	{
@@ -17,9 +18,21 @@ public class health : NetworkBehaviour {
 		curHealth -= amount;
 		if (curHealth <= 0)
 		{
-			curHealth = maxHealth;
+			curHealth = startHealth;
 			RpcRespawn ();
 		}
+	}
+
+	public void RecoverHealth(int amount) {
+		if (!isServer) {
+			return;
+		}
+		curHealth += amount;
+		if (curHealth > maxHealth) {
+			curHealth = maxHealth;
+		}
+
+
 	}
 
 	void OnChangeHealth(int currentHealth) {

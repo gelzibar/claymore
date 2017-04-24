@@ -6,14 +6,14 @@ using UnityEngine.Networking;
 public class trail_maker : NetworkBehaviour {
 
 	[SyncVar(hook = "OnEnabledChange")]
-	public bool enabled = false;
+	public bool trailEnabled = false;
 	[SyncVar(hook = "OnToggleChange")]
-	public bool toggle = false;
+	public bool trailToggle = false;
 
 	void OnEnabledChange(bool change) {
-		enabled = change;
+		trailEnabled = change;
 	}
 	void OnToggleChange(bool change) {
-		toggle = change;
+		trailToggle = change;
 	}
 }
