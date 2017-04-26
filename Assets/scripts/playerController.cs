@@ -116,13 +116,20 @@ public class playerController : NetworkBehaviour
 	}
 
     void GetPlayerInputFixed() {
+        Debug.Log("GetFixedInput");
         float forward = Input.GetAxis("Vertical");
         float turn = Input.GetAxis("Horizontal");
 
 		float groundedAdjust = groundedRating * 0.5f;
+        float jumpFactor = 0.5f;
 
 		myRigidbody.AddRelativeForce(Vector3.forward * accel * forward * groundedAdjust, ForceMode.Force);
 		myRigidbody.AddRelativeTorque(Vector3.up * turn * torque  * groundedAdjust, ForceMode.Force);
+
+        if(Input.GetKeyDown(KeyCode.Space)) {
+            Debug.Log("Pressed.");
+            myRigidbody.AddRelativeForce(Vector3.up * accel * jumpFactor, ForceMode.Impulse);
+        }
     }
 
     void GetPlayerInputStandard() {
