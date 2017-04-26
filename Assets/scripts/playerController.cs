@@ -10,7 +10,9 @@ public class playerController : NetworkBehaviour
 	// Physics and movement
 	private Rigidbody myRigidbody;
 	private float torque;
-	private float accel;
+	private float accel, decel;
+	private float curVelocity;
+	private float minVelocity, maxVelocity;
 	private List<tire> tires;
 	private bool grounded;
 	private int groundedRating;
@@ -38,7 +40,10 @@ public class playerController : NetworkBehaviour
         // Physics and movement definitions
         myRigidbody = GetComponent<Rigidbody>();
         torque = 300.0f;
-        accel = 400.0f;
+        accel = 3.0f;
+		decel = accel * 2;
+		maxVelocity = 1000;
+		minVelocity = 100;
         myRigidbody.maxAngularVelocity = 2.5f;
         grounded = false;
 		groundedRating = 0;
@@ -85,6 +90,12 @@ public class playerController : NetworkBehaviour
 
 
 		}
+
+
+		if (!isLocalPlayer) {
+			return;
+		}
+
 //		bool[] groundedTires = new bool[4];
 //		Debug.Log (tires.Count);
 //		for (int i = 0; i < tires.Count; i++) {
@@ -93,12 +104,8 @@ public class playerController : NetworkBehaviour
 //
 //		grounded = groundedTires [0] || groundedTires [1] || groundedTires [2] || groundedTires [3];
 
-		if (grounded == true) {
-			if (!isLocalPlayer) {
-				return;
-			}
-            GetPlayerInputFixed();
-		}
+        GetPlayerInputFixed();
+		
 	}
 	
 	// Update is called once per frame
@@ -116,21 +123,164 @@ public class playerController : NetworkBehaviour
 	}
 
     void GetPlayerInputFixed() {
-        Debug.Log("GetFixedInput");
         float forward = Input.GetAxis("Vertical");
         float turn = Input.GetAxis("Horizontal");
+		float roll = Input.GetAxis ("Roll");
 
 		float groundedAdjust = groundedRating * 0.5f;
         float jumpFactor = 0.5f;
+		float inAirFactor = 0.1f;
 
-		myRigidbody.AddRelativeForce(Vector3.forward * accel * forward * groundedAdjust, ForceMode.Force);
-		myRigidbody.AddRelativeTorque(Vector3.up * turn * torque  * groundedAdjust, ForceMode.Force);
+		Debug.Log (curVelocity + ":" + myRigidbody.velocity);
+		if (grounded == true) {
+//			if (Input.GetKey (KeyCode.W)) {
+//				ForwardVelocity ();
+//			} else if (Input.GetKey (KeyCode.S)) {
+//				if (curVelocity > 0) {
+//					ReduceCurVelocity ();
+//				}
+//				//BackwardVecloity ();
+//			} else {
+//				ReduceCurVelocity ();
+//			}
 
-        if(Input.GetKeyDown(KeyCode.Space)) {
-            Debug.Log("Pressed.");
-            myRigidbody.AddRelativeForce(Vector3.up * accel * jumpFactor, ForceMode.Impulse);
-        }
+			DetermineCurVelocity (forward);
+			Vector3 speed = Vector3.forward * curVelocity * groundedAdjust;
+			myRigidbody.AddRelativeForce (speed, ForceMode.Force);
+			myRigidbody.AddRelativeTorque (Vector3.up * turn * torque * groundedAdjust, ForceMode.Force);
+
+			if (Input.GetKeyDown (KeyCode.Space)) {
+				//Debug.Log ("Pressed.");
+				myRigidbody.AddRelativeForce (Vector3.up * 400.0f * jumpFactor, ForceMode.Impulse);
+			}
+			if(Input.GetKey(KeyCode.LeftShift)) {
+				ApplyBrake();
+			}
+		} else if (grounded == false) {
+			myRigidbody.AddRelativeTorque (Vector3.right * forward * torque * inAirFactor, ForceMode.Force);
+			myRigidbody.AddRelativeTorque (Vector3.up * turn * torque * inAirFactor, ForceMode.Force);
+			myRigidbody.AddRelativeTorque (Vector3.forward * roll * torque * inAirFactor, ForceMode.Force);
+
+			ReduceCurVelocity ();
+		}
     }
+
+	void DetermineCurVelocity(float input) {
+
+		if (input != 0) {
+			IdentifyContextualInput (input);
+		} else {
+			ReduceCurVelocity ();
+		}
+
+		CheckVelocityThreshold (input);
+	}
+
+	void IdentifyContextualInput(float input) {
+		int inputSign = 1;
+		if (input < 0) {
+			inputSign = -1;
+		}
+
+		if (curVelocity * inputSign >= 0) {
+			curVelocity += (accel * inputSign);
+		} else if (curVelocity * inputSign < 0) {
+			ApplyBrake ();
+		}
+	}
+
+	void ApplyBrake() {
+		float tempV = Mathf.Abs (curVelocity);
+		int signed = VelocitySign ();
+
+		if (tempV > decel) {
+			curVelocity = (tempV - decel) * signed;
+		} else {
+			curVelocity = 0;
+		}
+	}
+
+	void CheckVelocityThreshold(float input) {
+		float curV = Mathf.Abs (curVelocity);
+		float minV = Mathf.Abs (minVelocity);
+		float maxV = Mathf.Abs (maxVelocity);
+		int signed = VelocitySign ();
+		bool braking = false;
+
+		float slowReverse = 0.25f;
+
+		if (input <= 0 && curVelocity < 0) {
+			minV *= slowReverse;
+			maxV *= slowReverse;
+		}
+
+
+		if (curVelocity > 0 && input < 0 || curVelocity < 0 && input > 0) {
+			braking = true;	
+		}
+
+		if (curV < minV && input != 0 && braking == false) {
+			curVelocity = minV * signed;
+		} else if (curV <= minV && input == 0 || curV <= minV && braking == true) {
+			curVelocity = 0;
+		}
+
+		if (curV > maxV) {
+			curVelocity = maxV * signed;
+		}
+	}
+
+	void ReduceCurVelocity() {
+		float tempV = Mathf.Abs (curVelocity);
+		int signed = VelocitySign ();
+
+		curVelocity = (tempV - accel) * signed;
+	}
+
+	int VelocitySign() {
+		int signed = 1;
+
+		if (curVelocity < 0) {
+			signed = -1;			
+		}
+
+		return signed;
+	}
+
+	void ForwardVelocity() {
+		
+		ChangeVelocity (1);
+	}
+	void BackwardVecloity() {
+//		float inverseMin = minVelocity * -1;
+//		float inverseMax = maxVelocity * -1;
+//
+//		if (curVelocity > inverseMin) {
+//			curVelocity = inverseMin;
+//		}
+//
+//		if (curVelocity > (maxVelocity * 1 / 3 * -1)) {
+//			curVelocity--;
+//		}
+		ChangeVelocity(-1);
+	}
+
+	void ChangeVelocity(int direction) {
+		if (curVelocity < minVelocity) {
+			curVelocity = minVelocity;
+		}
+
+		if (curVelocity < maxVelocity) {
+			curVelocity++;
+		}
+
+		curVelocity = curVelocity;
+	
+	}
+
+	bool MinThreshold(float left, float right) {
+		return (left < right);
+	}
 
     void GetPlayerInputStandard() {
         // Shooting Mechanics
