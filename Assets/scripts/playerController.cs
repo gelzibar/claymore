@@ -7,24 +7,32 @@ using UnityEngine.Networking;
 public class playerController : NetworkBehaviour
 {
 
-	// Physics and movement
-	private Rigidbody myRigidbody;
-	private float torque;
-	private float accel, decel;
-	private float curVelocity;
-	private float minVelocity, maxVelocity;
-	private List<tire> tires;
-	private bool grounded;
-	private int groundedRating;
-
 	// Related Objects
+	private VehicleMove myVehicleMove;
 	public GameObject myCam;
-	public GameObject pBullet;
+	public GameObject pBullet, pGrenade;
 	private float primaryCD, primaryTimer;
 	private bool primaryToggle;
+	public NetworkInstanceId myNetID;
 
     // Personalization
     public Material myStandardMaterial;
+
+	// Aiming Script
+	private Turret sTurret;
+
+	void Awake() {
+		AssignNetworkTransformChild ();
+	}
+
+	void OnTriggerStay(Collider col) {
+		if (col.gameObject.CompareTag ("safe")) {
+			int healAmount = 100 - GetComponent<health> ().curHealth;
+			gameObject.GetComponent<health> ().RecoverHealth(healAmount);
+
+		}
+			
+	}
 
 	// Use this for initialization
 	void Start ()
@@ -34,34 +42,18 @@ public class playerController : NetworkBehaviour
 			
 			myCam.SetActive (false);
 		}
-
-		//GameObject.Find ("Dropdown").SetActive (false);
-
-        // Physics and movement definitions
-        myRigidbody = GetComponent<Rigidbody>();
-        torque = 300.0f;
-        accel = 3.0f;
-		decel = accel * 2;
-		maxVelocity = 1000;
-		minVelocity = 100;
-        myRigidbody.maxAngularVelocity = 2.5f;
-        grounded = false;
-		groundedRating = 0;
-
-
-		tires = new List<tire> ();
-        foreach (Transform child in transform)
-        {
-            if (child.gameObject.tag == "tire")
-            {
-                tires.Add(child.GetComponent<tire>());
-            }
-        }
+		Cursor.lockState = CursorLockMode.Locked;
 
 		primaryCD = 0.60f;
 		primaryTimer = 0;
 		primaryToggle = false;
+		myNetID = GetComponent<NetworkIdentity> ().netId;
 
+		// Aiming Setup
+		sTurret = transform.Find("turret").GetComponent<Turret>();
+
+		// Movement Setup
+		myVehicleMove = GetComponent<VehicleMove>();
 	}
 
 	void OnGUI ()
@@ -74,35 +66,14 @@ public class playerController : NetworkBehaviour
 
 		GUI.Label (new Rect (300, 0, 100, 100), "Health: " + GetComponent<health> ().curHealth); 
 		GUI.Label (new Rect (10, 0, 100, 100), frames.ToString ());        
+		GetComponent<VehicleMove> ().ChildGUI ();
 	}
 
 	void FixedUpdate ()
 	{
-		grounded = false;
-		groundedRating = 0;
-		foreach (tire tire in tires) {
-			if (grounded == false) {
-				grounded = tire.grounded;
-			}
-			if (tire.grounded == true) {
-				groundedRating++;
-			}
-
-
-		}
-
-
 		if (!isLocalPlayer) {
 			return;
 		}
-
-//		bool[] groundedTires = new bool[4];
-//		Debug.Log (tires.Count);
-//		for (int i = 0; i < tires.Count; i++) {
-//			groundedTires[i] = tires[i].GroundViaSphereCast();
-//		}
-//
-//		grounded = groundedTires [0] || groundedTires [1] || groundedTires [2] || groundedTires [3];
 
         GetPlayerInputFixed();
 		
@@ -123,171 +94,42 @@ public class playerController : NetworkBehaviour
 	}
 
     void GetPlayerInputFixed() {
-        float forward = Input.GetAxis("Vertical");
-        float turn = Input.GetAxis("Horizontal");
-		float roll = Input.GetAxis ("Roll");
 
-		float groundedAdjust = groundedRating * 0.5f;
-        float jumpFactor = 0.5f;
-		float inAirFactor = 0.1f;
-
-		Debug.Log (curVelocity + ":" + myRigidbody.velocity);
-		if (grounded == true) {
-//			if (Input.GetKey (KeyCode.W)) {
-//				ForwardVelocity ();
-//			} else if (Input.GetKey (KeyCode.S)) {
-//				if (curVelocity > 0) {
-//					ReduceCurVelocity ();
-//				}
-//				//BackwardVecloity ();
-//			} else {
-//				ReduceCurVelocity ();
-//			}
-
-			DetermineCurVelocity (forward);
-			Vector3 speed = Vector3.forward * curVelocity * groundedAdjust;
-			myRigidbody.AddRelativeForce (speed, ForceMode.Force);
-			myRigidbody.AddRelativeTorque (Vector3.up * turn * torque * groundedAdjust, ForceMode.Force);
-
-			if (Input.GetKeyDown (KeyCode.Space)) {
-				//Debug.Log ("Pressed.");
-				myRigidbody.AddRelativeForce (Vector3.up * 400.0f * jumpFactor, ForceMode.Impulse);
-			}
-			if(Input.GetKey(KeyCode.LeftShift)) {
-				ApplyBrake();
-			}
-		} else if (grounded == false) {
-			myRigidbody.AddRelativeTorque (Vector3.right * forward * torque * inAirFactor, ForceMode.Force);
-			myRigidbody.AddRelativeTorque (Vector3.up * turn * torque * inAirFactor, ForceMode.Force);
-			myRigidbody.AddRelativeTorque (Vector3.forward * roll * torque * inAirFactor, ForceMode.Force);
-
-			ReduceCurVelocity ();
-		}
     }
 
-	void DetermineCurVelocity(float input) {
-
-		if (input != 0) {
-			IdentifyContextualInput (input);
-		} else {
-			ReduceCurVelocity ();
-		}
-
-		CheckVelocityThreshold (input);
-	}
-
-	void IdentifyContextualInput(float input) {
-		int inputSign = 1;
-		if (input < 0) {
-			inputSign = -1;
-		}
-
-		if (curVelocity * inputSign >= 0) {
-			curVelocity += (accel * inputSign);
-		} else if (curVelocity * inputSign < 0) {
-			ApplyBrake ();
-		}
-	}
-
-	void ApplyBrake() {
-		float tempV = Mathf.Abs (curVelocity);
-		int signed = VelocitySign ();
-
-		if (tempV > decel) {
-			curVelocity = (tempV - decel) * signed;
-		} else {
-			curVelocity = 0;
-		}
-	}
-
-	void CheckVelocityThreshold(float input) {
-		float curV = Mathf.Abs (curVelocity);
-		float minV = Mathf.Abs (minVelocity);
-		float maxV = Mathf.Abs (maxVelocity);
-		int signed = VelocitySign ();
-		bool braking = false;
-
-		float slowReverse = 0.25f;
-
-		if (input <= 0 && curVelocity < 0) {
-			minV *= slowReverse;
-			maxV *= slowReverse;
-		}
-
-
-		if (curVelocity > 0 && input < 0 || curVelocity < 0 && input > 0) {
-			braking = true;	
-		}
-
-		if (curV < minV && input != 0 && braking == false) {
-			curVelocity = minV * signed;
-		} else if (curV <= minV && input == 0 || curV <= minV && braking == true) {
-			curVelocity = 0;
-		}
-
-		if (curV > maxV) {
-			curVelocity = maxV * signed;
-		}
-	}
-
-	void ReduceCurVelocity() {
-		float tempV = Mathf.Abs (curVelocity);
-		int signed = VelocitySign ();
-
-		curVelocity = (tempV - accel) * signed;
-	}
-
-	int VelocitySign() {
-		int signed = 1;
-
-		if (curVelocity < 0) {
-			signed = -1;			
-		}
-
-		return signed;
-	}
-
-	void ForwardVelocity() {
-		
-		ChangeVelocity (1);
-	}
-	void BackwardVecloity() {
-//		float inverseMin = minVelocity * -1;
-//		float inverseMax = maxVelocity * -1;
+//	void ForwardVelocity() {
+//		
+//		ChangeVelocity (1);
+//	}
+//	void BackwardVecloity() {
+////		float inverseMin = minVelocity * -1;
+////		float inverseMax = maxVelocity * -1;
+////
+////		if (curVelocity > inverseMin) {
+////			curVelocity = inverseMin;
+////		}
+////
+////		if (curVelocity > (maxVelocity * 1 / 3 * -1)) {
+////			curVelocity--;
+////		}
+//		ChangeVelocity(-1);
+//	}
 //
-//		if (curVelocity > inverseMin) {
-//			curVelocity = inverseMin;
+//	void ChangeVelocity(int direction) {
+//		if (curVelocity < minVelocity) {
+//			curVelocity = minVelocity;
 //		}
 //
-//		if (curVelocity > (maxVelocity * 1 / 3 * -1)) {
-//			curVelocity--;
+//		if (curVelocity < maxVelocity) {
+//			curVelocity++;
 //		}
-		ChangeVelocity(-1);
-	}
-
-	void ChangeVelocity(int direction) {
-		if (curVelocity < minVelocity) {
-			curVelocity = minVelocity;
-		}
-
-		if (curVelocity < maxVelocity) {
-			curVelocity++;
-		}
-
-		curVelocity = curVelocity;
-	
-	}
-
-	bool MinThreshold(float left, float right) {
-		return (left < right);
-	}
+//	}
 
     void GetPlayerInputStandard() {
-        // Shooting Mechanics
 		if (primaryToggle == false) {
 			if (Input.GetMouseButtonDown (0)) {
 				primaryToggle = true;
-				CmdFireBullet (transform.Find ("turret_face").position, myRigidbody.rotation);
+				CmdFireBullet (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
 
 			}
 		} else if (primaryToggle == true && primaryTimer >= primaryCD) {
@@ -297,6 +139,13 @@ public class playerController : NetworkBehaviour
 			primaryTimer += Time.deltaTime;
 		}
 
+		if (Input.GetMouseButtonDown (1)) {
+			CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
+		}
+
+		if (Input.GetKeyDown (KeyCode.F12)) {
+			ToggleLockState ();
+		}
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
@@ -308,14 +157,21 @@ public class playerController : NetworkBehaviour
             float offsetX = transform.rotation.eulerAngles.x * -1;
             float offsetZ = transform.rotation.eulerAngles.z * -1;
             transform.Rotate(new Vector3(offsetX, 0, offsetZ ));
-
         }
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            transform.position = new Vector3(-32f, 2f, 11.5f);
+            transform.position = new Vector3(0.0f, 252.0f, 0.0f);
         }
     }
 
+	void ToggleLockState() {
+		if (Cursor.lockState == CursorLockMode.None) {
+			Cursor.lockState = CursorLockMode.Locked;
+		} else if (Cursor.lockState == CursorLockMode.Locked) {
+			Cursor.visible = true;
+			Cursor.lockState = CursorLockMode.None;
+		}
+	}
 
 	bool GroundViaSphereCast (Vector3 origin)
 	{
@@ -326,27 +182,48 @@ public class playerController : NetworkBehaviour
 	}
 
 	public void SetAllMaterial(Material newMaterial) {
-		GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("chassis").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find ("FL_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find ("FR_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find ("BL_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find ("BR_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find ("L_Cylinder").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find ("R_Cylinder").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find ("Face").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		//transform.Find ("turret").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find("turret").Find("barrel").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find("turret").Find ("cap").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find("turret/pivot").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+	}
+
+	void AssignNetworkTransformChild() {
+		
+		foreach(NetworkTransformChild aChild in GetComponents (typeof(NetworkTransformChild))) {
+			if (aChild.target == null) {
+				aChild.target = transform.Find ("turret/barrel");
+			}
+		}
 	}
 
 	[Command]
-	void CmdFireBullet (Vector3 position, Quaternion rotation)
+	void CmdFireBullet (Vector3 position, Quaternion rotation, NetworkInstanceId id)
 	{
 		GameObject curBullet = Instantiate (pBullet, position, rotation, GameObject.Find ("Ammo Container").transform);
 		curBullet.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward * 0.05f, ForceMode.Impulse);
+		curBullet.GetComponent<bulletController> ().SetOwnerNetID (id);
 		Destroy (curBullet, 2.0f);
 
 		NetworkServer.Spawn (curBullet);
 	}
 
+	[Command]
+	void CmdFireSpecial (Vector3 position, Quaternion rotation, NetworkInstanceId id) {
+		GameObject curGrenade = Instantiate (pGrenade, position, rotation, GameObject.Find ("Ammo Container").transform);
+		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce ((Vector3.forward + Vector3.up) * 0.10f, ForceMode.Impulse);
+		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
+		//Destroy (curBullet, 2.0f);
 
+		NetworkServer.Spawn (curGrenade);
+	}
 		
 }
  

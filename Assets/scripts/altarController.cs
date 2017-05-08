@@ -11,6 +11,8 @@ public class altarController : NetworkBehaviour {
 	private float respawn;
 	private float timer;
 
+	public Material defaultMaterial;
+
 	// Use this for initialization
 	void Start () {
 		if (!isServer) {
@@ -19,6 +21,9 @@ public class altarController : NetworkBehaviour {
 		respawn = pPowerup.GetComponent<healthPickupController>().GetRespawn ();
 
 		timer = 0;
+
+		//Set Color to white for all
+		transform.Find("pAltar").GetComponent<MeshRenderer>().sharedMaterial = defaultMaterial;
 		//NewPowerup ();
 		
 	}
@@ -41,10 +46,16 @@ public class altarController : NetworkBehaviour {
 	}
 
 	void DestroyPowerup() {
+		if (!isServer) {
+			return;
+		}
 		Destroy (transform.FindChild (attachedPowerup.name).gameObject);
 	}
 
 	void NewPowerup() {
+		if (!isServer) {
+			return;
+		}
 		Vector3 position = new Vector3 (transform.position.x, transform.position.y + pPowerup.transform.position.y, transform.position.z);
 		GameObject powerup = Instantiate (pPowerup, position, pPowerup.transform.rotation, transform);
 		attachedPowerup = powerup;
