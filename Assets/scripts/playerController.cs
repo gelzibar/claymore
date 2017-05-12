@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UI;
 
 public class playerController : NetworkBehaviour
 {
@@ -12,7 +13,8 @@ public class playerController : NetworkBehaviour
 	public GameObject myCam;
 	public GameObject pBullet, pGrenade;
 	private float primaryCD, primaryTimer;
-	private bool primaryToggle;
+	private float specialCD, specialTimer;
+	private bool primaryToggle, specialToggle;
 	public NetworkInstanceId myNetID;
 
     // Personalization
@@ -47,6 +49,9 @@ public class playerController : NetworkBehaviour
 		primaryCD = 0.60f;
 		primaryTimer = 0;
 		primaryToggle = false;
+		specialCD = Grenade.maxCD;
+		specialTimer = 0.0f;
+		specialToggle = false;
 		myNetID = GetComponent<NetworkIdentity> ().netId;
 
 		// Aiming Setup
@@ -63,8 +68,11 @@ public class playerController : NetworkBehaviour
 		}
 		int frames = (int)(1.0f / Time.smoothDeltaTime);
 
-
-		GUI.Label (new Rect (300, 0, 100, 100), "Health: " + GetComponent<health> ().curHealth); 
+		if (specialToggle == true) {
+			GUI.Label (new Rect (300, 0, 200, 100), "Grenade CD: " + specialTimer.ToString ("F1") + " of " + specialCD); 
+		} else if (specialToggle == false) {
+			GUI.Label (new Rect (300, 0, 200, 100), "Grenade Ready"); 
+		}
 		GUI.Label (new Rect (10, 0, 100, 100), frames.ToString ());        
 		GetComponent<VehicleMove> ().ChildGUI ();
 	}
@@ -139,8 +147,16 @@ public class playerController : NetworkBehaviour
 			primaryTimer += Time.deltaTime;
 		}
 
-		if (Input.GetMouseButtonDown (1)) {
-			CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
+		if (specialToggle == false) {
+			if (Input.GetMouseButtonDown (1)) {
+				specialToggle = true;
+				CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
+			}
+		} else if (specialToggle == true && specialTimer >= specialCD) {
+			specialToggle = false;
+			specialTimer = 0.0f;
+		} else {
+			specialTimer += Time.deltaTime;
 		}
 
 		if (Input.GetKeyDown (KeyCode.F12)) {
@@ -193,6 +209,13 @@ public class playerController : NetworkBehaviour
 		transform.Find("turret").Find("barrel").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find("turret").Find ("cap").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find("turret/pivot").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find("Front Indicator").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find("Front Indicator (1)").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+
+		if (!isLocalPlayer) {
+			return;
+		}
+		GameObject.Find ("Active Layer").GetComponent<Image> ().color = newMaterial.color;
 	}
 
 	void AssignNetworkTransformChild() {
@@ -218,11 +241,25 @@ public class playerController : NetworkBehaviour
 	[Command]
 	void CmdFireSpecial (Vector3 position, Quaternion rotation, NetworkInstanceId id) {
 		GameObject curGrenade = Instantiate (pGrenade, position, rotation, GameObject.Find ("Ammo Container").transform);
-		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce ((Vector3.forward + Vector3.up) * 0.10f, ForceMode.Impulse);
+		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce ((Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
 		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
 		//Destroy (curBullet, 2.0f);
 
 		NetworkServer.Spawn (curGrenade);
+
+//		Vector3 offset = new Vector3 (position.x + 1, position.y, position.z);
+//		GameObject curGrenade = Instantiate (pGrenade, offset, rotation, GameObject.Find ("Ammo Container").transform);
+//		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce (((Vector3.right / 5) + Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
+//		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
+//
+//		NetworkServer.Spawn (curGrenade);
+//
+//		offset = new Vector3 (position.x -1, position.y, position.z);
+//		curGrenade = Instantiate (pGrenade, offset, rotation, GameObject.Find ("Ammo Container").transform);
+//		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce (((Vector3.left / 5) + Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
+//		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
+//
+//		NetworkServer.Spawn (curGrenade);
 	}
 		
 }

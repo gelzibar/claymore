@@ -15,7 +15,6 @@ public class Explosion : NetworkBehaviour {
 			return;
 		}
 
-		//Debug.Log ("Explode Trigger");
 		if (col.transform.parent != null && col.transform.parent.CompareTag ("player")) {
 			bool alreadyDamaged = false;
 			foreach (NetworkInstanceId childID in damagedNetID) {
@@ -24,7 +23,6 @@ public class Explosion : NetworkBehaviour {
 				}
 			}
 			if (alreadyDamaged == false) {
-				Debug.Log ("Explode Triggered on player");
 				col.transform.parent.GetComponent<health> ().TakeDamage (25);
 				col.transform.parent.GetComponent<materialHandler> ().StartStrobe ();
 				//col.transform.parent
@@ -39,7 +37,6 @@ public class Explosion : NetworkBehaviour {
 //			return;
 //		}
 //		if (col.gameObject.CompareTag ("player")) {
-//			Debug.Log ("Explode Stay");
 //			col.gameObject.GetComponent<health> ().TakeDamage (25);
 //			col.gameObject.GetComponent<materialHandler> ().StartStrobe ();
 //			//Destroy (this.gameObject);
@@ -52,7 +49,7 @@ public class Explosion : NetworkBehaviour {
 			return;
 		}
 
-		detTime = 0.25f;
+		detTime = 0.1f;
 		timer = 0.0f;
 
 		damagedNetID = new List<NetworkInstanceId> ();
@@ -66,7 +63,7 @@ public class Explosion : NetworkBehaviour {
 			return;
 		}
 		if (timer > detTime) {
-			//Destroy (this.gameObject);
+			Destroy (this.gameObject);
 		} else {
 			timer += Time.deltaTime;
 		}

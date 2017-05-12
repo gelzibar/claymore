@@ -30,7 +30,7 @@ public class VehicleMove : NetworkBehaviour {
 		torque = 300.0f;
 		accel = 3.0f;
 		decel = accel * 3.5f;
-		maxVelocity = 1000;
+		maxVelocity = 750;
 		minVelocity = 100;
 		myRigidbody.maxAngularVelocity = 2.5f;
 		grounded = false;

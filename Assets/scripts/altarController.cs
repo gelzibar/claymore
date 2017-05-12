@@ -22,6 +22,7 @@ public class altarController : NetworkBehaviour {
 
 		timer = 0;
 
+
 		//Set Color to white for all
 		transform.Find("pAltar").GetComponent<MeshRenderer>().sharedMaterial = defaultMaterial;
 		//NewPowerup ();

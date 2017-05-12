@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class Grenade : NetworkBehaviour {
+public class Grenade : Gadget {
 
 	public float detTime;
 	public float timer;
 	private NetworkInstanceId ownerNetID;
 
 	public GameObject pExplosion;
+	public static float maxCD = 3.0f;
 
 	// Use this for initialization
 	void Start () {
@@ -19,6 +20,9 @@ public class Grenade : NetworkBehaviour {
 
 		detTime = 3.0f;
 		timer = 0.0f;
+
+		curCooldownTimer = 0.0f;
+		maxCooldownTimer = 1.0f;
 		
 	}
 	
@@ -28,7 +32,6 @@ public class Grenade : NetworkBehaviour {
 			return;
 		}
 		if (timer > detTime) {
-			Debug.Log ("Boom");
 			GenerateExplosion ();
 			Destroy (this.gameObject);
 		} else {
