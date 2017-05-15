@@ -27,7 +27,7 @@ public class VehicleMove : NetworkBehaviour {
 	void Start () {
 		// Physics and movement definitions
 		myRigidbody = GetComponent<Rigidbody>();
-		torque = 300.0f;
+		torque = 8.0f;
 		accel = 3.0f;
 		decel = accel * 3.5f;
 		maxVelocity = 750;
@@ -109,7 +109,7 @@ public class VehicleMove : NetworkBehaviour {
 		DetermineCurVelocity (forward);
 		Vector3 speed = Vector3.forward * curVelocity * groundedAdjust;
 		myRigidbody.AddRelativeForce (speed, ForceMode.Force);
-		myRigidbody.AddRelativeTorque (Vector3.up * turn * torque * groundedAdjust, ForceMode.Force);
+		myRigidbody.AddRelativeTorque (Vector3.up * turn * torque * groundedAdjust, ForceMode.Acceleration);
 
 		if (jumpTrigger == true) {
 			myRigidbody.AddRelativeForce (Vector3.up * 400.0f * jumpFactor, ForceMode.Impulse);
@@ -122,10 +122,12 @@ public class VehicleMove : NetworkBehaviour {
 
 	void AirborneMovement() {
 		float inAirFactor = 0.1f;
+		float torqueMulti = 30.0f;
+		float torqueAdjust = torque * torqueMulti;
 
-		myRigidbody.AddRelativeTorque (Vector3.right * forward * torque * inAirFactor, ForceMode.Force);
-		myRigidbody.AddRelativeTorque (Vector3.up * turn * torque * inAirFactor, ForceMode.Force);
-		myRigidbody.AddRelativeTorque (Vector3.forward * roll * torque * inAirFactor, ForceMode.Force);
+		myRigidbody.AddRelativeTorque (Vector3.right * forward * torqueAdjust * inAirFactor, ForceMode.Force);
+		myRigidbody.AddRelativeTorque (Vector3.up * turn * torqueAdjust * inAirFactor, ForceMode.Force);
+		myRigidbody.AddRelativeTorque (Vector3.forward * roll * torqueAdjust * inAirFactor, ForceMode.Force);
 
 		Vector3 speed = Vector3.forward * curVelocity * groundedAdjust;
 

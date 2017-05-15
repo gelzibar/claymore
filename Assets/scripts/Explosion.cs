@@ -63,7 +63,9 @@ public class Explosion : NetworkBehaviour {
 			return;
 		}
 		if (timer > detTime) {
-			Destroy (this.gameObject);
+			Destroy (this.gameObject, 3.0f);
+			GetComponent<MeshRenderer> ().enabled = false;
+			GetComponent<SphereCollider> ().enabled = false;
 		} else {
 			timer += Time.deltaTime;
 		}

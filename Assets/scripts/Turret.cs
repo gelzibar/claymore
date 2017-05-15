@@ -9,6 +9,7 @@ public class Turret : NetworkBehaviour {
 	private float vertDegreeOffset;
 	private float vertDegreeMax, vertDegreeMin;
 	private float vertDegreeCur;
+	private float startDegree;
 
 	// Use this for initialization
 	void Start () {
@@ -18,6 +19,7 @@ public class Turret : NetworkBehaviour {
 		vertDegreeCur = 0.0f;
 		vertDegreeMax = 15.0f;
 		vertDegreeMin = -8.0f;
+		startDegree = 0.0f;
 		
 	}
 	
@@ -43,10 +45,10 @@ public class Turret : NetworkBehaviour {
 		vertDegreeCur = mouseY / verticalReducer;
 		vertDegreeOffset += vertDegreeCur;
 		if (vertDegreeOffset >= vertDegreeMax) {
-			vertDegreeCur = barrel.transform.localRotation.eulerAngles.x - (90.0f - vertDegreeMax);
+			vertDegreeCur = barrel.transform.localRotation.eulerAngles.x - (startDegree - vertDegreeMax);
 			vertDegreeOffset = vertDegreeMax;
 		} else if (vertDegreeOffset <= vertDegreeMin) {
-			vertDegreeCur = (90.0f + vertDegreeMin) - barrel.transform.localRotation.eulerAngles.x;
+			vertDegreeCur = barrel.transform.localRotation.eulerAngles.x - (startDegree - vertDegreeMin);
 			vertDegreeOffset = vertDegreeMin;
 		}
 

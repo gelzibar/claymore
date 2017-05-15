@@ -150,6 +150,9 @@ public class playerController : NetworkBehaviour
 		if (specialToggle == false) {
 			if (Input.GetMouseButtonDown (1)) {
 				specialToggle = true;
+//				GetComponent<AudioSource> ().pitch = 1.75f;
+				GetComponent<AudioSource> ().Play ();
+				//GetComponent<AudioSource> ().pitch = 1.0f;
 				CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
 			}
 		} else if (specialToggle == true && specialTimer >= specialCD) {
@@ -198,19 +201,13 @@ public class playerController : NetworkBehaviour
 	}
 
 	public void SetAllMaterial(Material newMaterial) {
-		transform.Find ("chassis").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find ("FL_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find ("FR_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find ("BL_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find ("BR_Tire").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find ("L_Cylinder").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find ("R_Cylinder").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+		transform.Find ("tank_body").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		//transform.Find ("turret").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find("turret").Find("barrel").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find("turret").Find ("cap").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 		transform.Find("turret/pivot").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find("Front Indicator").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
-		transform.Find("Front Indicator (1)").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+//		transform.Find("Front Indicator").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
+//		transform.Find("Front Indicator (1)").GetComponent<MeshRenderer> ().sharedMaterial = newMaterial;
 
 		if (!isLocalPlayer) {
 			return;
@@ -240,8 +237,12 @@ public class playerController : NetworkBehaviour
 
 	[Command]
 	void CmdFireSpecial (Vector3 position, Quaternion rotation, NetworkInstanceId id) {
+//		Quaternion tempQuat = rotation;
+//		tempQuat.eulerAngles = new Vector3(tempQuat.eulerAngles.x - 30.0f , tempQuat.eulerAngles.y, tempQuat.eulerAngles.z);
+
 		GameObject curGrenade = Instantiate (pGrenade, position, rotation, GameObject.Find ("Ammo Container").transform);
 		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce ((Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
+		curGrenade.GetComponent<Rigidbody> ().angularVelocity = UnityEngine.Random.insideUnitSphere * 5.0f;
 		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
 		//Destroy (curBullet, 2.0f);
 

@@ -7,9 +7,9 @@ public class Teleporter : MonoBehaviour {
 	public Transform teleportExit;
 
 	void OnTriggerEnter(Collider col) {
-		if (col.gameObject.CompareTag ("player")) {
-			col.gameObject.transform.parent.gameObject.transform.position = teleportExit.position;
-			col.gameObject.transform.parent.gameObject.transform.rotation = teleportExit.rotation;
+		if (col.transform.root.CompareTag ("player")) {
+			col.transform.root.transform.position = teleportExit.position;
+			col.transform.root.transform.rotation = teleportExit.rotation;
 		}
 	}
 

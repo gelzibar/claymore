@@ -12,6 +12,12 @@ public class Grenade : Gadget {
 	public GameObject pExplosion;
 	public static float maxCD = 3.0f;
 
+
+	void OnCollisionEnter() {
+		GetComponent<AudioSource> ().Play ();
+		GetComponent<AudioSource> ().pitch += 0.08f;
+	}
+
 	// Use this for initialization
 	void Start () {
 		if (!isServer) {

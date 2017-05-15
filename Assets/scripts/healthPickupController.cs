@@ -45,10 +45,10 @@ public class healthPickupController : MonoBehaviour {
 	}
 
 	void OnTriggerEnter(Collider col) {
-		GameObject colGameObject = col.transform.parent.gameObject;
-		if (col.gameObject.CompareTag ("player")) {
+		Transform colRootTrans = col.transform.root;
+		if (colRootTrans.CompareTag ("player")) {
 			Debug.Log (healAmount);
-			colGameObject.gameObject.GetComponent<health> ().RecoverHealth(healAmount);
+			colRootTrans.gameObject.GetComponent<health> ().RecoverHealth(healAmount);
 			Destroy (this.gameObject);
 		}
 	}
