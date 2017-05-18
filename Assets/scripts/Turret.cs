@@ -1,9 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 
-public class Turret : NetworkBehaviour {
+public class Turret : MonoBehaviour {
 
 	// Aiming
 	private float vertDegreeOffset;
@@ -20,14 +19,14 @@ public class Turret : NetworkBehaviour {
 		vertDegreeMax = 15.0f;
 		vertDegreeMin = -8.0f;
 		startDegree = 0.0f;
-		
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
+		Transform bullet_source = transform.Find ("face");
 		float mouseX = Input.GetAxis ("Mouse X");
 		TurretRotation (mouseX);
-		
 	}
 
 	public void TurretRotation(float delta) {
@@ -55,5 +54,9 @@ public class Turret : NetworkBehaviour {
 		barrel.transform.RotateAround (pivot.position, pivot.right * -1, vertDegreeCur);
 		bullet_source.transform.RotateAround (pivot.position, pivot.right * -1, vertDegreeCur);
 
+	}
+
+	public float GetVertDegreeOffset() {
+		return vertDegreeOffset;
 	}
 }

@@ -15,18 +15,18 @@ public class Explosion : NetworkBehaviour {
 			return;
 		}
 
-		if (col.transform.parent != null && col.transform.parent.CompareTag ("player")) {
+		if (col.transform.root.CompareTag ("player")) {
 			bool alreadyDamaged = false;
 			foreach (NetworkInstanceId childID in damagedNetID) {
-					if (childID == col.transform.parent.GetComponent<NetworkIdentity> ().netId) {
+					if (childID == col.transform.root.GetComponent<NetworkIdentity> ().netId) {
 					alreadyDamaged = true;
 				}
 			}
 			if (alreadyDamaged == false) {
-				col.transform.parent.GetComponent<health> ().TakeDamage (25);
-				col.transform.parent.GetComponent<materialHandler> ().StartStrobe ();
+				col.transform.root.GetComponent<health> ().TakeDamage (25);
+				col.transform.root.GetComponent<materialHandler> ().StartStrobe ();
 				//col.transform.parent
-				damagedNetID.Add(col.transform.parent.GetComponent<NetworkIdentity> ().netId);
+				damagedNetID.Add(col.transform.root.GetComponent<NetworkIdentity> ().netId);
 				//Destroy (this.gameObject);
 			}
 		}

@@ -59,6 +59,11 @@ public class playerController : NetworkBehaviour
 
 		// Movement Setup
 		myVehicleMove = GetComponent<VehicleMove>();
+
+		//UI Disable
+		GameObject.Find("Title").GetComponent<Image>().enabled = false;
+//		GameObject.Find("Dropdown").GetComponent<Dropdown>().enabled = false;
+//		GameObject.Find("Dropdown").GetComponent<Image>().enabled = false;
 	}
 
 	void OnGUI ()
@@ -98,7 +103,28 @@ public class playerController : NetworkBehaviour
 			return;
 		}
         GetPlayerInputStandard();
+		SetCrosshairs ();
 
+
+	}
+
+	void SetCrosshairs() {
+		Vector3 tempVec = new Vector3();
+		float forwardMulti = 0.0f;
+		RaycastHit hit;
+		Transform bullet_source = transform.Find ("turret/face");
+		Ray downRay = new Ray(bullet_source.position, bullet_source.forward);
+		int layerMask = 1 << 8;
+		layerMask = ~layerMask;
+		if (Physics.Raycast (downRay, out hit, 5000.0f, layerMask)) {
+			forwardMulti = hit.distance;
+		} else {
+			forwardMulti = 1000.0f;
+		}
+		uiController myUICon = GameObject.Find ("UIManager").GetComponent<uiController>();
+		tempVec = bullet_source.position + (bullet_source.forward * forwardMulti);
+		myUICon.turretVector = myCam.GetComponent<Camera>().WorldToScreenPoint(tempVec);
+		myUICon.UpdateMyCrosshairs ();
 	}
 
     void GetPlayerInputFixed() {

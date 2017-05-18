@@ -9,12 +9,16 @@ public class uiController : MonoBehaviour {
 	private GameObject myDropdown;
 	private int prevValue;
 
+	private GameObject myCrosshairs;
+	public Vector3 turretVector;
+
 	// Use this for initialization
 	void Start () {
 		myDropdown = GameObject.Find ("/Canvas/Dropdown");
+		myCrosshairs = GameObject.Find ("/Canvas/Crosshairs");
 		prevValue = myDropdown.GetComponent<Dropdown> ().value;
 
-
+		turretVector = new Vector3 ();
 	}
 	
 	// Update is called once per frame
@@ -22,6 +26,8 @@ public class uiController : MonoBehaviour {
 		GetSelectedColor ();
 
 		prevValue = myDropdown.GetComponent<Dropdown> ().value;
+		//myCrosshairs.transform.position = turretVector;
+
 	}
 
 	public void SetPrevValue(int newValue) {
@@ -48,5 +54,9 @@ public class uiController : MonoBehaviour {
 		if (prevValue != myDropdown.GetComponent<Dropdown> ().value) {
 			
 		}
+	}
+
+	public void UpdateMyCrosshairs() {
+		myCrosshairs.transform.position = turretVector;
 	}
 }
