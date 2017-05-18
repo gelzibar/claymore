@@ -59,4 +59,8 @@ public class uiController : MonoBehaviour {
 	public void UpdateMyCrosshairs() {
 		myCrosshairs.transform.position = turretVector;
 	}
+
+	public void QuitGame() {
+		Application.Quit ();
+	}
 }

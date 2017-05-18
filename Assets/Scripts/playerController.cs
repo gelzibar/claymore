@@ -61,7 +61,7 @@ public class playerController : NetworkBehaviour
 		myVehicleMove = GetComponent<VehicleMove>();
 
 		//UI Disable
-		GameObject.Find("Title").GetComponent<Image>().enabled = false;
+		//GameObject.Find("Title").GetComponent<Image>().enabled = false;
 //		GameObject.Find("Dropdown").GetComponent<Dropdown>().enabled = false;
 //		GameObject.Find("Dropdown").GetComponent<Image>().enabled = false;
 	}
