@@ -12,6 +12,15 @@ public class uiController : MonoBehaviour {
 	private GameObject myCrosshairs;
 	public Vector3 turretVector;
 
+	public playerController myPlayer;
+	public skinHandler mySkinHandler;
+	public GameObject respawnButton;
+
+	// Pause Menu
+	private GameObject myPauseMenu;
+	private GameObject myPauseShading;
+	private bool hasAssignedButton;
+
 	// Use this for initialization
 	void Start () {
 		myDropdown = GameObject.Find ("/Canvas/Dropdown");
@@ -19,15 +28,46 @@ public class uiController : MonoBehaviour {
 		prevValue = myDropdown.GetComponent<Dropdown> ().value;
 
 		turretVector = new Vector3 ();
+
+		myPauseMenu = GameObject.Find ("Pause Menu");
+		myPauseShading = GameObject.Find ("Pause Shading");
+		SetPause (false);
+
+		respawnButton = GameObject.Find ("Respawn");
+
+		hasAssignedButton = false;
+
+//		if (hasAssignedButton == false && myPlayer != null) {
+//			Debug.Log ("Assigning Button");
+//			Debug.Log (myPlayer.ToString ());
+//			respawnButton.GetComponent<Button>().onClick.AddListener (() => {myPlayer.GetComponent<playerController> ().Respawn ();});
+//			hasAssignedButton = true;
+//		}
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
+//		if (hasAssignedButton == false && myPlayer != null) {
+//			Debug.Log ("Assigning Button");
+//			Debug.Log (myPlayer.ToString ());
+//
+//			respawnButton.GetComponent<Button>().onClick.AddListener (() => {myPlayer.GetComponent<playerController> ().Respawn ();});
+//
+//			hasAssignedButton = true;
+//		}
 		GetSelectedColor ();
 
 		prevValue = myDropdown.GetComponent<Dropdown> ().value;
 		//myCrosshairs.transform.position = turretVector;
 
+	}
+
+	public void RequestRespawn() {
+		myPlayer.Respawn ();
+		myPlayer.ToggleLockState ();
+		myPlayer.ToggleControl ();
+		ToggleMenu ();
 	}
 
 	public void SetPrevValue(int newValue) {
@@ -52,7 +92,10 @@ public class uiController : MonoBehaviour {
 
 	public void GetSelectedColor() {
 		if (prevValue != myDropdown.GetComponent<Dropdown> ().value) {
-			
+			prevValue = GetCurValue();
+			mySkinHandler.SetSkinValue(GetCurValue());
+			mySkinHandler.AssignMaterial ();
+	
 		}
 	}
 
@@ -60,7 +103,23 @@ public class uiController : MonoBehaviour {
 		myCrosshairs.transform.position = turretVector;
 	}
 
+	public void ToggleMenu() {
+		if (myPauseMenu.activeSelf == false) {
+			SetPause (true);
+		} else if (myPauseMenu.activeSelf == true) {
+			SetPause (false);
+		}
+	}
+
+	public void SetPause(bool newValue) {
+		myPauseMenu.SetActive (newValue);
+		myPauseShading.SetActive (newValue);
+		myDropdown.SetActive (newValue);
+	}
+
 	public void QuitGame() {
 		Application.Quit ();
 	}
+
+
 }

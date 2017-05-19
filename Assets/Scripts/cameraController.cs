@@ -7,8 +7,13 @@ public class cameraController : MonoBehaviour {
 
 	public GameObject trackedObj;
 
+	private playerController myPlayerController;
+	private bool isControlEnabled;
+
 	// Use this for initialization
 	void Start () {
+		myPlayerController = trackedObj.GetComponent<playerController> ();
+		isControlEnabled = true;
 		
 	}
 
@@ -19,13 +24,17 @@ public class cameraController : MonoBehaviour {
 	}
 	// Update is called once per frame
 	void Update () {
-		float mouseX = Input.GetAxis ("Mouse X");
-		float deltaAmplifier = 1.5f;
+		isControlEnabled = myPlayerController.GetIsControlEnabled ();
 
-		transform.RotateAround (trackedObj.transform.position, trackedObj.transform.up, mouseX * deltaAmplifier);
+		if(isControlEnabled) {
+			float mouseX = Input.GetAxis ("Mouse X");
+			float deltaAmplifier = 1.5f;
 
-		//Vector3 conversion = transform.TransformPoint (new Vector3 (trackedObj.GetComponent<Transform> ().localPosition.x, trackedObj.GetComponent<Transform> ().localPosition.y + 6f, trackedObj.GetComponent<Transform> ().localPosition.z - 10f));
+			transform.RotateAround (trackedObj.transform.position, trackedObj.transform.up, mouseX * deltaAmplifier);
+
+			//Vector3 conversion = transform.TransformPoint (new Vector3 (trackedObj.GetComponent<Transform> ().localPosition.x, trackedObj.GetComponent<Transform> ().localPosition.y + 6f, trackedObj.GetComponent<Transform> ().localPosition.z - 10f));
 		//transform.position = conversion;
+		}
 	}
 
     void mouseLook()

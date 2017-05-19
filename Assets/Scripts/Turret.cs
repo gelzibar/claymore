@@ -10,6 +10,9 @@ public class Turret : MonoBehaviour {
 	private float vertDegreeCur;
 	private float startDegree;
 
+	private playerController myPlayerController;
+	bool isControlEnabled;
+
 	// Use this for initialization
 	void Start () {
 
@@ -20,13 +23,20 @@ public class Turret : MonoBehaviour {
 		vertDegreeMin = -8.0f;
 		startDegree = 0.0f;
 
+		isControlEnabled = true;
+		myPlayerController = transform.root.GetComponent<playerController> ();
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
+		isControlEnabled = myPlayerController.GetIsControlEnabled ();
 		Transform bullet_source = transform.Find ("face");
-		float mouseX = Input.GetAxis ("Mouse X");
-		TurretRotation (mouseX);
+
+		if (isControlEnabled) {
+			float mouseX = Input.GetAxis ("Mouse X");
+			TurretRotation (mouseX);
+		}
 	}
 
 	public void TurretRotation(float delta) {

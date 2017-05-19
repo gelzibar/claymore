@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 public class HillNetworkManagerHUD : NetworkBehaviour {
 
@@ -10,11 +11,20 @@ public class HillNetworkManagerHUD : NetworkBehaviour {
 	private NetworkClient myNetworkClient;
 	public InputField ipAddress;
 
+	public Scene curScene;
+	public string curSceneName;
+
 	void Awake() {
+		curScene = SceneManager.GetActiveScene();
+		curSceneName = curScene.name;
+
 		myNetworkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager> ();
 		myNetworkClient = new NetworkClient ();
-		ipAddress = ipAddress.GetComponent<InputField> ();
-		ipAddress.text = "127.0.0.1";
+
+		if(curSceneName == "Main Menu") {
+			ipAddress = ipAddress.GetComponent<InputField> ();
+			//ipAddress.text = "127.0.0.1";
+		}
 	}
 	
 	// Update is called once per frame
@@ -35,6 +45,12 @@ public class HillNetworkManagerHUD : NetworkBehaviour {
 		myNetworkClient.RegisterHandler(MsgType.Connect, OnConnected);
 		myNetworkManager.networkAddress = ipAddress.text;
 		myNetworkManager.StartClient ();
+	}
+
+	public void StopLocalClient()
+	{
+		myNetworkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager> ();
+		myNetworkManager.StopClient ();
 	}
 
 	public virtual void OnClientConnect(NetworkConnection conn)

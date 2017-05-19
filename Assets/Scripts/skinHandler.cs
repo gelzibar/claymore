@@ -21,6 +21,7 @@ public class skinHandler : NetworkBehaviour {
 	void Start () {
 
 		uiCon = GameObject.Find ("UIManager").GetComponent<uiController>();
+		uiCon.mySkinHandler = this;
         playerMat = GetComponent<playerController>().myStandardMaterial;
 
 		BuildMatList ();

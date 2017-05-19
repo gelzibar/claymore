@@ -16,12 +16,15 @@ public class playerController : NetworkBehaviour
 	private float specialCD, specialTimer;
 	private bool primaryToggle, specialToggle;
 	public NetworkInstanceId myNetID;
+	public uiController myUI;
 
     // Personalization
     public Material myStandardMaterial;
 
 	// Aiming Script
 	private Turret sTurret;
+
+	private bool isControlEnabled;
 
 	void Awake() {
 		AssignNetworkTransformChild ();
@@ -60,10 +63,12 @@ public class playerController : NetworkBehaviour
 		// Movement Setup
 		myVehicleMove = GetComponent<VehicleMove>();
 
-		//UI Disable
-		//GameObject.Find("Title").GetComponent<Image>().enabled = false;
-//		GameObject.Find("Dropdown").GetComponent<Dropdown>().enabled = false;
-//		GameObject.Find("Dropdown").GetComponent<Image>().enabled = false;
+		// UI Setup
+		myUI = GameObject.Find("UIManager").GetComponent<uiController>();
+		myUI.myPlayer = this;
+
+		isControlEnabled = true;
+
 	}
 
 	void OnGUI ()
@@ -87,8 +92,6 @@ public class playerController : NetworkBehaviour
 		if (!isLocalPlayer) {
 			return;
 		}
-
-        GetPlayerInputFixed();
 		
 	}
 	
@@ -103,7 +106,9 @@ public class playerController : NetworkBehaviour
 			return;
 		}
         GetPlayerInputStandard();
-		SetCrosshairs ();
+		if (isControlEnabled) {
+			SetCrosshairs ();
+		}
 
 
 	}
@@ -160,37 +165,38 @@ public class playerController : NetworkBehaviour
 //	}
 
     void GetPlayerInputStandard() {
-		if (primaryToggle == false) {
-			if (Input.GetMouseButtonDown (0)) {
-				primaryToggle = true;
-				CmdFireBullet (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
+		if (isControlEnabled == true) {
+			if (primaryToggle == false) {
+				if (Input.GetMouseButtonDown (0)) {
+					primaryToggle = true;
+					CmdFireBullet (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
 
+				}
+			} else if (primaryToggle == true && primaryTimer >= primaryCD) {
+				primaryToggle = false;
+				primaryTimer = 0;
+			} else {
+				primaryTimer += Time.deltaTime;
 			}
-		} else if (primaryToggle == true && primaryTimer >= primaryCD) {
-			primaryToggle = false;
-			primaryTimer = 0;
-		} else {
-			primaryTimer += Time.deltaTime;
-		}
 
-		if (specialToggle == false) {
-			if (Input.GetMouseButtonDown (1)) {
-				specialToggle = true;
+			if (specialToggle == false) {
+				if (Input.GetMouseButtonDown (1)) {
+					specialToggle = true;
 //				GetComponent<AudioSource> ().pitch = 1.75f;
-				GetComponent<AudioSource> ().Play ();
-				//GetComponent<AudioSource> ().pitch = 1.0f;
-				CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
+					GetComponent<AudioSource> ().Play ();
+					//GetComponent<AudioSource> ().pitch = 1.0f;
+					CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
+				}
+			} else if (specialToggle == true && specialTimer >= specialCD) {
+				specialToggle = false;
+				specialTimer = 0.0f;
+			} else {
+				specialTimer += Time.deltaTime;
 			}
-		} else if (specialToggle == true && specialTimer >= specialCD) {
-			specialToggle = false;
-			specialTimer = 0.0f;
-		} else {
-			specialTimer += Time.deltaTime;
-		}
 
-		if (Input.GetKeyDown (KeyCode.F12)) {
-			ToggleLockState ();
-		}
+			if (Input.GetKeyDown (KeyCode.F12)) {
+				ToggleLockState ();
+			}
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
@@ -203,13 +209,29 @@ public class playerController : NetworkBehaviour
             float offsetZ = transform.rotation.eulerAngles.z * -1;
             transform.Rotate(new Vector3(offsetX, 0, offsetZ ));
         }
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            transform.position = new Vector3(0.0f, 252.0f, 0.0f);
-        }
+//        if (Input.GetKeyDown(KeyCode.Escape))
+//        {
+//            transform.position = new Vector3(0.0f, 252.0f, 0.0f);
+//        }
+		}
+
+		if (Input.GetKeyDown (KeyCode.Escape)) {
+			ToggleLockState ();
+			myUI.ToggleMenu ();
+			ToggleControl ();
+
+		}
     }
 
-	void ToggleLockState() {
+	public void ToggleControl() {
+		if (isControlEnabled == false) {
+			isControlEnabled = true;
+		} else if (isControlEnabled == true) {
+			isControlEnabled = false;
+		}
+	}
+
+	public void ToggleLockState() {
 		if (Cursor.lockState == CursorLockMode.None) {
 			Cursor.lockState = CursorLockMode.Locked;
 		} else if (Cursor.lockState == CursorLockMode.Locked) {
@@ -241,6 +263,10 @@ public class playerController : NetworkBehaviour
 		GameObject.Find ("Active Layer").GetComponent<Image> ().color = newMaterial.color;
 	}
 
+	public void Respawn() {
+		transform.position = new Vector3(0.0f, 252.0f, 0.0f);
+	}
+
 	void AssignNetworkTransformChild() {
 		
 		foreach(NetworkTransformChild aChild in GetComponents (typeof(NetworkTransformChild))) {
@@ -248,6 +274,10 @@ public class playerController : NetworkBehaviour
 				aChild.target = transform.Find ("turret/barrel");
 			}
 		}
+	}
+
+	public bool GetIsControlEnabled() {
+		return isControlEnabled;
 	}
 
 	[Command]

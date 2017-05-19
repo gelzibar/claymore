@@ -23,6 +23,9 @@ public class VehicleMove : NetworkBehaviour {
 	bool isBraking;
 	bool jumpTrigger;
 
+	private playerController myPlayerController;
+	bool isControlEnabled;
+
 	// Use this for initialization
 	void Start () {
 		// Physics and movement definitions
@@ -43,6 +46,9 @@ public class VehicleMove : NetworkBehaviour {
 
 		isBraking = false;
 		jumpTrigger = false;
+		isControlEnabled = true;
+
+		myPlayerController = transform.root.GetComponent<playerController> ();
 
 		tires = new List<tire> ();
 		foreach (Transform child in transform)
@@ -60,11 +66,14 @@ public class VehicleMove : NetworkBehaviour {
 	}
 
 	void FixedUpdate() {
-		Move ();
+		if (isControlEnabled == true) {
+			Move ();
+		}
 	}
 	
 	// Update is called once per frame
 	void Update () {
+		isControlEnabled = myPlayerController.GetIsControlEnabled ();
 		grounded = false;
 		groundedRating = 0;
 		foreach (tire tire in tires) {
@@ -78,8 +87,10 @@ public class VehicleMove : NetworkBehaviour {
 
 		}
 
-		if (Input.GetKeyDown (KeyCode.Space)) {
-			jumpTrigger = true;
+		if (isControlEnabled == true) {
+			if (Input.GetKeyDown (KeyCode.Space)) {
+				jumpTrigger = true;
+			}
 		}
 
 
