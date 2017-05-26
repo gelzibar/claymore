@@ -19,8 +19,8 @@ public class Turret : MonoBehaviour {
 		// Aiming Setup
 		vertDegreeOffset = 0.0f;
 		vertDegreeCur = 0.0f;
-		vertDegreeMax = 15.0f;
-		vertDegreeMin = -8.0f;
+		vertDegreeMax = 20.0f;
+		vertDegreeMin = -20.0f;
 		startDegree = 0.0f;
 
 		isControlEnabled = true;
@@ -31,7 +31,7 @@ public class Turret : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		isControlEnabled = myPlayerController.GetIsControlEnabled ();
-		Transform bullet_source = transform.Find ("face");
+		//Transform bullet_source = transform.Find ("face");
 
 		if (isControlEnabled) {
 			float mouseX = Input.GetAxis ("Mouse X");

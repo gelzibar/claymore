@@ -5,14 +5,19 @@ using UnityEngine.UI;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
-public class HillNetworkManagerHUD : NetworkBehaviour {
+public class HillNetworkManagerHUD : MonoBehaviour {
 
 	private NetworkManager myNetworkManager;
 	private NetworkClient myNetworkClient;
 	public InputField ipAddress;
 
+	public MainMenu myMenu;
+
 	public Scene curScene;
 	public string curSceneName;
+
+	private float connectionTimer, connectionMaxTimer;
+	private bool isConnecting;
 
 	void Awake() {
 		curScene = SceneManager.GetActiveScene();
@@ -25,32 +30,85 @@ public class HillNetworkManagerHUD : NetworkBehaviour {
 			ipAddress = ipAddress.GetComponent<InputField> ();
 			//ipAddress.text = "127.0.0.1";
 		}
-	}
-	
-	// Update is called once per frame
-	void Update () {
 
+		isConnecting = false;
+		connectionTimer = 0.0f;
+		connectionMaxTimer = 3.0f;
 	}
 
+	void Update() {
+		curScene = SceneManager.GetActiveScene();
+		curSceneName = curScene.name;
+
+		if (curSceneName == "Main Menu" && myMenu == null) {
+			myMenu = GameObject.Find ("MainMenuManager").GetComponent<MainMenu>();
+			myMenu.ipAddress.text = myNetworkManager.networkAddress;
+		}
+
+		if (isConnecting == false) {
+		
+		} else if (isConnecting == true && connectionTimer < connectionMaxTimer) {
+			connectionTimer += Time.deltaTime;
+		} else if (isConnecting == true && connectionTimer > connectionMaxTimer) {
+			// Connection Time Out
+			isConnecting = false;
+			connectionTimer = 0.0f;
+			if (myMenu != null) {
+				myMenu.connectionStatus.SetActive (false);
+			}
+
+			if (!myNetworkClient.isConnected) {
+				NetworkClient.ShutdownAll();
+			}
+
+		}
+	}
 	public void StartServer() {
 		if (!NetworkClient.active && !NetworkServer.active) {
 			Debug.Log ("Starting Server");
-			Debug.Log ("Listening Port: " + myNetworkManager.networkPort);
+//			Debug.Log ("Listening Port: " + myNetworkManager.networkPort);
 			myNetworkManager.StartHost ();
+		}
+	}
+
+	public void StartDedicated() {
+		if (!NetworkClient.active && !NetworkServer.active) {
+			Debug.Log ("Starting Dedicated Server");
+			//			Debug.Log ("Listening Port: " + myNetworkManager.networkPort);
+			myNetworkManager.StartServer ();
 		}
 	}
 
 	public void SetupLocalClient()
 	{
 		myNetworkClient.RegisterHandler(MsgType.Connect, OnConnected);
+		ipAddress = GameObject.Find ("Address Field").GetComponent<InputField>();
 		myNetworkManager.networkAddress = ipAddress.text;
-		myNetworkManager.StartClient ();
+		myNetworkClient = myNetworkManager.StartClient ();
+		myMenu.connectionStatus.SetActive (true);
+		isConnecting = true;
+		connectionTimer = 0.0f;
+
 	}
 
 	public void StopLocalClient()
 	{
-		myNetworkManager = GameObject.Find("NetworkManager").GetComponent<NetworkManager> ();
-		myNetworkManager.StopClient ();
+		if (NetworkServer.active && NetworkClient.active) {
+			Debug.Log ("Server Host is disconnecting.");
+			myNetworkManager = GameObject.Find ("NetworkManager").GetComponent<NetworkManager> ();
+
+			myNetworkManager.StopHost ();
+
+		} else if (NetworkClient.active) {
+			myNetworkManager = GameObject.Find ("NetworkManager").GetComponent<NetworkManager> ();
+			myNetworkManager.StopClient ();
+		} else if (NetworkServer.active) {
+			myNetworkManager = GameObject.Find ("NetworkManager").GetComponent<NetworkManager> ();
+			myNetworkManager.StopServer ();
+		}
+
+		NetworkClient.ShutdownAll();
+
 	}
 
 	public virtual void OnClientConnect(NetworkConnection conn)
@@ -63,4 +121,19 @@ public class HillNetworkManagerHUD : NetworkBehaviour {
 	{
 		Debug.Log("Connected to server");
 	}
+
+	public void OnError(NetworkMessage netMsg) {
+		Debug.Log("Could not connect to server.");
+	}
+
+	public void OnFailedToConnect(NetworkConnectionError error) {
+		Debug.Log("Could not connect to server: " + error);
+	}
+
+	public void OnConnectedToServer() {
+		Debug.Log ("OnConnectedToServer");
+	}
+
+
+
 }

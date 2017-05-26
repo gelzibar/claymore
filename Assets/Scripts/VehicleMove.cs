@@ -192,7 +192,7 @@ public class VehicleMove : NetworkBehaviour {
 		int signed = VelocitySign ();
 		bool braking = false;
 
-		float slowReverse = 0.25f;
+		float slowReverse = 0.50f;
 
 		if (input <= 0 && curVelocity < 0) {
 			minV *= slowReverse;

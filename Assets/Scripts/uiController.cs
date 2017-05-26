@@ -19,13 +19,22 @@ public class uiController : MonoBehaviour {
 	// Pause Menu
 	private GameObject myPauseMenu;
 	private GameObject myPauseShading;
-	private bool hasAssignedButton;
+//	private bool hasAssignedButton;
+
+	public Button serverButton;
 
 	// Use this for initialization
 	void Start () {
 		myDropdown = GameObject.Find ("/Canvas/Dropdown");
 		myCrosshairs = GameObject.Find ("/Canvas/Crosshairs");
 		prevValue = myDropdown.GetComponent<Dropdown> ().value;
+
+		if (Application.isEditor) {
+			serverButton = GameObject.Find ("Server").GetComponent<Button> ();
+			serverButton.onClick.AddListener (() => {
+				GameObject.Find ("NetworkManager").GetComponent<HillNetworkManagerHUD> ().StartServer ();
+			});
+		}
 
 		turretVector = new Vector3 ();
 
@@ -35,7 +44,7 @@ public class uiController : MonoBehaviour {
 
 		respawnButton = GameObject.Find ("Respawn");
 
-		hasAssignedButton = false;
+//		hasAssignedButton = false;
 
 //		if (hasAssignedButton == false && myPlayer != null) {
 //			Debug.Log ("Assigning Button");

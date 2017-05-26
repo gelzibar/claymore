@@ -24,7 +24,7 @@ public class Explosion : NetworkBehaviour {
 			}
 			if (alreadyDamaged == false) {
 				col.transform.root.GetComponent<health> ().TakeDamage (25);
-				col.transform.root.GetComponent<materialHandler> ().StartStrobe ();
+				col.transform.root.GetComponent<DamageFlash> ().StartStrobe ();
 				//col.transform.parent
 				damagedNetID.Add(col.transform.root.GetComponent<NetworkIdentity> ().netId);
 				//Destroy (this.gameObject);

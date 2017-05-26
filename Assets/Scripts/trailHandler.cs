@@ -41,6 +41,9 @@ public class trailHandler : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		// Disable Butter Trails functionality.
+//		UpdateLinePositions ();
+//		TrailsToLinePositions ();
 		
 	}
 

@@ -9,9 +9,9 @@ public class playerController : NetworkBehaviour
 {
 
 	// Related Objects
-	private VehicleMove myVehicleMove;
+//	private VehicleMove myVehicleMove;
 	public GameObject myCam;
-	public GameObject pBullet, pGrenade;
+	public GameObject pBullet, pGrenade, pMuzzle;
 	private float primaryCD, primaryTimer;
 	private float specialCD, specialTimer;
 	private bool primaryToggle, specialToggle;
@@ -22,9 +22,11 @@ public class playerController : NetworkBehaviour
     public Material myStandardMaterial;
 
 	// Aiming Script
-	private Turret sTurret;
+//	private Turret sTurret;
 
 	private bool isControlEnabled;
+
+	public GameObject pScorch;
 
 	void Awake() {
 		AssignNetworkTransformChild ();
@@ -58,10 +60,10 @@ public class playerController : NetworkBehaviour
 		myNetID = GetComponent<NetworkIdentity> ().netId;
 
 		// Aiming Setup
-		sTurret = transform.Find("turret").GetComponent<Turret>();
+//		sTurret = transform.Find("turret").GetComponent<Turret>();
 
 		// Movement Setup
-		myVehicleMove = GetComponent<VehicleMove>();
+//		myVehicleMove = GetComponent<VehicleMove>();
 
 		// UI Setup
 		myUI = GameObject.Find("UIManager").GetComponent<uiController>();
@@ -98,10 +100,6 @@ public class playerController : NetworkBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-        // Disable Butter Trails functionality.
-		// UpdateLinePositions ();
-		// TrailsToLinePositions ();
-
 		if (!isLocalPlayer) {
 			return;
 		}
@@ -169,7 +167,10 @@ public class playerController : NetworkBehaviour
 			if (primaryToggle == false) {
 				if (Input.GetMouseButtonDown (0)) {
 					primaryToggle = true;
-					CmdFireBullet (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
+					CmdFireBullet2 (transform.Find ("turret/face").position, transform.Find ("turret/face").forward, myNetID);
+					//transform.FindChild ("turret/face/Muzzle Flash").gameObject.GetComponent<ParticleSystem> ().Play ();
+					CmdMuzzleFlash(transform.FindChild ("turret/face").position);
+					GetComponent<AudioSource> ().Play ();
 
 				}
 			} else if (primaryToggle == true && primaryTimer >= primaryCD) {
@@ -292,6 +293,52 @@ public class playerController : NetworkBehaviour
 	}
 
 	[Command]
+	void CmdFireBullet2 (Vector3 position, Vector3 rotation, NetworkInstanceId id)
+	{
+
+		RaycastHit hit;
+
+//		Physics.Raycast(
+		//Physics.Raycast (position, 0.1f, rotation.eulerAngles, out hit, 2000.0f);
+		if (Physics.Raycast (position, rotation, out hit, 2000.0f)) {
+			if (hit.transform.root.gameObject.tag == "player") {
+				hit.transform.root.gameObject.GetComponent<health> ().TakeDamage (25);
+				hit.transform.root.gameObject.GetComponent<DamageFlash> ().StartStrobe ();
+			} else {
+				RpcCreateScorch (hit.point, hit.normal);
+			}
+		}
+
+//		Transform bullet_source = transform.Find ("turret/face");
+//		Ray downRay = new Ray(bullet_source.position, bullet_source.forward);
+//		int layerMask = 1 << 8;
+//		layerMask = ~layerMask;
+//		if (Physics.Raycast (downRay, out hit, 5000.0f, layerMask)) {
+//			forwardMulti = hit.distance;
+//		} else {
+//			forwardMulti = 1000.0f;
+//		}
+//		GameObject curBullet = Instantiate (pBullet, position, rotation, GameObject.Find ("Ammo Container").transform);
+//		curBullet.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward * 0.05f, ForceMode.Impulse);
+//		curBullet.GetComponent<bulletController> ().SetOwnerNetID (id);
+//		Destroy (curBullet, 2.0f);
+//
+//		NetworkServer.Spawn (curBullet);
+	}
+
+	[ClientRpc]
+	public void RpcCreateScorch(Vector3 position, Vector3 normal) {
+		Quaternion zeroRot = new Quaternion ();
+		//		Instantiate (pCircle2, position + normal, zeroRot);
+		//		Instantiate (pCircle, position, zeroRot);
+
+		Quaternion rotation = Quaternion.FromToRotation(Vector3.up, normal);
+		Vector3 forwardPos = Vector3.Lerp (position, position + normal, 0.1f);
+		Transform scorchContainer = GameObject.Find ("Decal Container").transform;
+		GameObject curScorch = Instantiate (pScorch, forwardPos, rotation, scorchContainer);
+	}
+
+	[Command]
 	void CmdFireSpecial (Vector3 position, Quaternion rotation, NetworkInstanceId id) {
 //		Quaternion tempQuat = rotation;
 //		tempQuat.eulerAngles = new Vector3(tempQuat.eulerAngles.x - 30.0f , tempQuat.eulerAngles.y, tempQuat.eulerAngles.z);
@@ -317,6 +364,24 @@ public class playerController : NetworkBehaviour
 //		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
 //
 //		NetworkServer.Spawn (curGrenade);
+	}
+
+	[Command]
+	void CmdMuzzleFlash(Vector3 position) {
+//		Quaternion rotate = new Quaternion ();
+//		GameObject curFlash = Instantiate (pMuzzle, position, rotate);
+//
+//		NetworkServer.Spawn (curFlash);
+		RpcMuzzleFlash(position);
+	}
+
+	[ClientRpc]
+	void RpcMuzzleFlash(Vector3 position) {
+//		if(isLocalPlayer)
+//			return;
+		Quaternion rotate = new Quaternion ();
+		GameObject curFlash = Instantiate (pMuzzle, position, rotate);
+		Destroy (curFlash, 2.0f);
 	}
 		
 }

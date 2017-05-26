@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 
 public class healthPickupController : MonoBehaviour {
 
@@ -47,7 +46,6 @@ public class healthPickupController : MonoBehaviour {
 	void OnTriggerEnter(Collider col) {
 		Transform colRootTrans = col.transform.root;
 		if (colRootTrans.CompareTag ("player")) {
-			Debug.Log (healAmount);
 			colRootTrans.gameObject.GetComponent<health> ().RecoverHealth(healAmount);
 			Destroy (this.gameObject);
 		}

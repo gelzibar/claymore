@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class materialHandler : NetworkBehaviour {
+public class DamageFlash : NetworkBehaviour {
 
 	// Damage Effect
 	public Material whiteMaterial, blackMaterial;

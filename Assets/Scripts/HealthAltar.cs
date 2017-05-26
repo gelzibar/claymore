@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class altarController : NetworkBehaviour {
+public class HealthAltar : NetworkBehaviour {
 
 
 	public GameObject pPowerup;
