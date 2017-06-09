@@ -18,6 +18,8 @@ public class playerController : NetworkBehaviour
 	public NetworkInstanceId myNetID;
 	public uiController myUI;
 
+	public Gadget gadget01;
+
     // Personalization
     public Material myStandardMaterial;
 
@@ -51,10 +53,12 @@ public class playerController : NetworkBehaviour
 		}
 		Cursor.lockState = CursorLockMode.Locked;
 
+		gadget01 = new MoldGrenade();
+
 		primaryCD = 0.60f;
 		primaryTimer = 0;
 		primaryToggle = false;
-		specialCD = Grenade.maxCD;
+		specialCD = gadget01.GetMaxCooldown();
 		specialTimer = 0.0f;
 		specialToggle = false;
 		myNetID = GetComponent<NetworkIdentity> ().netId;
@@ -64,6 +68,8 @@ public class playerController : NetworkBehaviour
 
 		// Movement Setup
 //		myVehicleMove = GetComponent<VehicleMove>();
+
+
 
 		// UI Setup
 		myUI = GameObject.Find("UIManager").GetComponent<uiController>();
@@ -85,6 +91,9 @@ public class playerController : NetworkBehaviour
 		} else if (specialToggle == false) {
 			GUI.Label (new Rect (300, 0, 200, 100), "Grenade Ready"); 
 		}
+		if (gadget01 != null) {
+			GUI.Label (new Rect (300, 20, 200, 100), "Throw: " + gadget01.GetThrow () + "/" + gadget01.GetMaxCapacity ()); 
+		}
 		GUI.Label (new Rect (10, 0, 100, 100), frames.ToString ());        
 		GetComponent<VehicleMove> ().ChildGUI ();
 	}
@@ -104,6 +113,11 @@ public class playerController : NetworkBehaviour
 			return;
 		}
         GetPlayerInputStandard();
+
+		if (gadget01 != null && gadget01.GetCurCapacity() <= 0) {
+			gadget01 = null;
+		}
+
 		if (isControlEnabled) {
 			SetCrosshairs ();
 		}
@@ -181,14 +195,30 @@ public class playerController : NetworkBehaviour
 			}
 
 			if (specialToggle == false) {
-				if (Input.GetMouseButtonDown (1)) {
-					specialToggle = true;
-//				GetComponent<AudioSource> ().pitch = 1.75f;
-					GetComponent<AudioSource> ().Play ();
-					//GetComponent<AudioSource> ().pitch = 1.0f;
-					CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, myNetID);
+				if (gadget01 != null && gadget01.GetChargeable () == true) {
+					if (gadget01.GetCurCapacity () > 0) {
+						if (Input.GetMouseButtonDown (1) && !gadget01.GetChargeComplete ()) {
+							if (gadget01.GetToggleCharge () == false) {
+								gadget01.StartCharge ();
+							}
+						}else if (Input.GetMouseButton (1) && !gadget01.GetChargeComplete()) {
+							if (gadget01.GetToggleCharge() == true) {
+								gadget01.AddChargeTime (Time.deltaTime);
+							}
+						} else if (Input.GetMouseButtonUp (1) || gadget01.GetChargeComplete()) {
+							if (gadget01.GetToggleCharge () == true) {
+								gadget01.CalculateThrow ();
+								gadget01.DecreaseCurCapacity (1);
+								specialToggle = true;
+								GetComponent<AudioSource> ().Play ();
+								CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, gadget01.GetThrow (), myNetID);
+								gadget01.ResetThrow ();
+								gadget01.EndCharge ();
+							}
+						}
+					}
 				}
-			} else if (specialToggle == true && specialTimer >= specialCD) {
+			} else if (specialToggle == true && specialTimer >= specialCD	) {
 				specialToggle = false;
 				specialTimer = 0.0f;
 			} else {
@@ -281,6 +311,22 @@ public class playerController : NetworkBehaviour
 		return isControlEnabled;
 	}
 
+	public void SetGadgetOneCapacity(int amount) {
+		gadget01.SetCurCapacity (amount);
+	}
+
+	public void SetGadgetOneCapacityToFull() {
+		if (gadget01 == null) {
+			gadget01 = new MoldGrenade ();
+		} else if (gadget01 != null) {
+			gadget01.SetCurCapacity (gadget01.GetMaxCapacity ());
+		}
+	}
+
+	public string GetGadgetName() {
+		return gadget01.GetName ();
+	}
+
 	[Command]
 	void CmdFireBullet (Vector3 position, Quaternion rotation, NetworkInstanceId id)
 	{
@@ -339,12 +385,13 @@ public class playerController : NetworkBehaviour
 	}
 
 	[Command]
-	void CmdFireSpecial (Vector3 position, Quaternion rotation, NetworkInstanceId id) {
+	void CmdFireSpecial (Vector3 position, Quaternion rotation, float strength, NetworkInstanceId id) {
 //		Quaternion tempQuat = rotation;
 //		tempQuat.eulerAngles = new Vector3(tempQuat.eulerAngles.x - 30.0f , tempQuat.eulerAngles.y, tempQuat.eulerAngles.z);
 
 		GameObject curGrenade = Instantiate (pGrenade, position, rotation, GameObject.Find ("Ammo Container").transform);
-		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce ((Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
+		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward  * strength, ForceMode.Impulse);
+//		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce ((Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
 		curGrenade.GetComponent<Rigidbody> ().angularVelocity = UnityEngine.Random.insideUnitSphere * 5.0f;
 		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
 		//Destroy (curBullet, 2.0f);

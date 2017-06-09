@@ -16,6 +16,14 @@ public class uiController : MonoBehaviour {
 	public skinHandler mySkinHandler;
 	public GameObject respawnButton;
 
+	public Image activeItemImage;
+	public Text activeItemCount;
+
+	public Image chargeMeter;
+	public const float chargeHorOffset = 25.0f;
+	public const float chargeVertOffset = -25.0f;
+
+
 	// Pause Menu
 	private GameObject myPauseMenu;
 	private GameObject myPauseShading;
@@ -36,6 +44,10 @@ public class uiController : MonoBehaviour {
 			});
 		}
 
+		chargeMeter = GameObject.Find("Canvas/Charge Meter").GetComponent<Image>();
+
+		activeItemImage = GameObject.Find ("Canvas/Items/Active Item").GetComponent<Image> ();
+		activeItemCount = GameObject.Find ("Canvas/Items/ItemCount/Text").GetComponent<Text> ();
 		turretVector = new Vector3 ();
 
 		myPauseMenu = GameObject.Find ("Pause Menu");
@@ -66,10 +78,43 @@ public class uiController : MonoBehaviour {
 //			hasAssignedButton = true;
 //		}
 		GetSelectedColor ();
-
+		UpdateItems ();
+		UpdateMeter ();
 		prevValue = myDropdown.GetComponent<Dropdown> ().value;
 		//myCrosshairs.transform.position = turretVector;
 
+	}
+
+	void UpdateItems() {
+		Sprite newImage = new Sprite();
+		int newCount = 0;
+		if (myPlayer.gadget01 != null) {
+			if (myPlayer.gadget01.GetName () == "grenade") {
+				newImage = Resources.Load<Sprite> ("Sprites/bomb_icon");				
+			}
+
+			newCount = myPlayer.gadget01.GetCurCapacity ();
+		} else {
+			newImage = Resources.Load<Sprite> ("Sprites/blank_icon");				
+		}
+		activeItemImage.sprite = newImage;
+		activeItemCount.text = "" + newCount;
+	}
+
+	void UpdateMeter() {
+		Vector3 offsetPos = new Vector3 (turretVector.x + chargeHorOffset, turretVector.y + chargeVertOffset);
+		chargeMeter.transform.position = offsetPos;
+		if (myPlayer.gadget01 != null) {
+			if (myPlayer.gadget01.GetToggleCharge () == true) {
+				chargeMeter.enabled = true;
+				chargeMeter.fillAmount = myPlayer.gadget01.GetPercentCharge ();
+				
+			} else if (myPlayer.gadget01.GetToggleCharge () == false) {
+				chargeMeter.enabled = false;
+			}
+		} else if (myPlayer.gadget01 == null) {
+			chargeMeter.enabled = false;
+		}
 	}
 
 	public void RequestRespawn() {

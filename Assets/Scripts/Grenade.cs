@@ -3,15 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class Grenade : Gadget {
+public class Grenade : NetworkBehaviour {
 
 	public float detTime;
 	public float timer;
 	private NetworkInstanceId ownerNetID;
 
 	public GameObject pExplosion;
-	public static float maxCD = 3.0f;
-
 
 	void OnCollisionEnter() {
 		GetComponent<AudioSource> ().Play ();
@@ -26,9 +24,6 @@ public class Grenade : Gadget {
 
 		detTime = 3.0f;
 		timer = 0.0f;
-
-		curCooldownTimer = 0.0f;
-		maxCooldownTimer = 1.0f;
 		
 	}
 	

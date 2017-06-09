@@ -24,6 +24,7 @@ public class CrateAltar : NetworkBehaviour {
 
 
 		//Set Color to white for all
+		//RpcResetAltarColor(this.gameObject);
 		transform.Find("pAltar").GetComponent<MeshRenderer>().sharedMaterial = defaultMaterial;
 		//NewPowerup ();
 
@@ -68,6 +69,10 @@ public class CrateAltar : NetworkBehaviour {
 	[ClientRpc]
 	void RpcPowerupProperties(GameObject powerup, GameObject parent) {
 		powerup.transform.parent = parent.transform;
+	}
 
+	[ClientRpc]
+	void RpcResetAltarColor(GameObject powerup) {
+		powerup.transform.Find("pAltar").GetComponent<MeshRenderer>().sharedMaterial = defaultMaterial;
 	}
 }

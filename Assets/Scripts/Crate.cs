@@ -24,8 +24,10 @@ public class Crate : MonoBehaviour {
 
 	void OnTriggerEnter(Collider col) {
 		Transform colRootTrans = col.transform.root;
+		playerController playerScript = colRootTrans.gameObject.GetComponent<playerController> ();
 		if (colRootTrans.CompareTag ("player")) {
 			Destroy (this.gameObject);
+			colRootTrans.gameObject.GetComponent<playerController> ().SetGadgetOneCapacityToFull ();
 		}
 	}
 
