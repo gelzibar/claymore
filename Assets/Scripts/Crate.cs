@@ -27,7 +27,7 @@ public class Crate : MonoBehaviour {
 		playerController playerScript = colRootTrans.gameObject.GetComponent<playerController> ();
 		if (colRootTrans.CompareTag ("player")) {
 			Destroy (this.gameObject);
-			colRootTrans.gameObject.GetComponent<playerController> ().SetGadgetOneCapacityToFull ();
+			colRootTrans.gameObject.GetComponent<playerController> ().GetRandomGadget ();
 		}
 	}
 

@@ -11,12 +11,14 @@ public class playerController : NetworkBehaviour
 	// Related Objects
 //	private VehicleMove myVehicleMove;
 	public GameObject myCam;
-	public GameObject pBullet, pGrenade, pMuzzle;
+	public GameObject pBullet, pMuzzle;
 	private float primaryCD, primaryTimer;
 	private float specialCD, specialTimer;
 	private bool primaryToggle, specialToggle;
 	public NetworkInstanceId myNetID;
 	public uiController myUI;
+	public VehicleMove myVehicleMove;
+	private Arsenal myArsenal;
 
 	public Gadget gadget01;
 
@@ -73,7 +75,12 @@ public class playerController : NetworkBehaviour
 
 		// UI Setup
 		myUI = GameObject.Find("UIManager").GetComponent<uiController>();
-		myUI.myPlayer = this;
+		if (myUI.myPlayer == null) {
+			myUI.myPlayer = this;
+		}
+
+		myVehicleMove = GetComponent<VehicleMove> ();
+		myArsenal = GetComponent<Arsenal> ();
 
 		isControlEnabled = true;
 
@@ -86,14 +93,6 @@ public class playerController : NetworkBehaviour
 		}
 		int frames = (int)(1.0f / Time.smoothDeltaTime);
 
-		if (specialToggle == true) {
-			GUI.Label (new Rect (300, 0, 200, 100), "Grenade CD: " + specialTimer.ToString ("F1") + " of " + specialCD); 
-		} else if (specialToggle == false) {
-			GUI.Label (new Rect (300, 0, 200, 100), "Grenade Ready"); 
-		}
-		if (gadget01 != null) {
-			GUI.Label (new Rect (300, 20, 200, 100), "Throw: " + gadget01.GetThrow () + "/" + gadget01.GetMaxCapacity ()); 
-		}
 		GUI.Label (new Rect (10, 0, 100, 100), frames.ToString ());        
 		GetComponent<VehicleMove> ().ChildGUI ();
 	}
@@ -195,29 +194,26 @@ public class playerController : NetworkBehaviour
 			}
 
 			if (specialToggle == false) {
-				if (gadget01 != null && gadget01.GetChargeable () == true) {
-					if (gadget01.GetCurCapacity () > 0) {
-						if (Input.GetMouseButtonDown (1) && !gadget01.GetChargeComplete ()) {
-							if (gadget01.GetToggleCharge () == false) {
-								gadget01.StartCharge ();
-							}
-						}else if (Input.GetMouseButton (1) && !gadget01.GetChargeComplete()) {
-							if (gadget01.GetToggleCharge() == true) {
-								gadget01.AddChargeTime (Time.deltaTime);
-							}
-						} else if (Input.GetMouseButtonUp (1) || gadget01.GetChargeComplete()) {
-							if (gadget01.GetToggleCharge () == true) {
-								gadget01.CalculateThrow ();
-								gadget01.DecreaseCurCapacity (1);
-								specialToggle = true;
-								GetComponent<AudioSource> ().Play ();
-								CmdFireSpecial (transform.Find ("turret/face").position, transform.Find ("turret/face").rotation, gadget01.GetThrow (), myNetID);
-								gadget01.ResetThrow ();
-								gadget01.EndCharge ();
-							}
-						}
+
+				if (gadget01 != null) {
+					if (gadget01.ResolveInput () == 1) {
+						specialToggle = true;
+//						GetComponent<AudioSource> ().Play ();
+						myArsenal.ExecuteGadget (gadget01, myNetID);
+						gadget01.ResetAll ();
 					}
 				}
+//					}
+//				}
+
+//				if (Input.GetMouseButtonDown (1)) {
+//					myArsenal.CmdActivateSpeedBoost ();
+//				}
+//				if (Input.GetMouseButtonDown (1)) {
+//					myVehicleMove.SetSpeedMultiplier (2.0f, 2.0f);
+//				}else if (Input.GetMouseButtonUp(1)) {
+//					myVehicleMove.ResetSpeedMultiplier ();
+//				}
 			} else if (specialToggle == true && specialTimer >= specialCD	) {
 				specialToggle = false;
 				specialTimer = 0.0f;
@@ -252,6 +248,13 @@ public class playerController : NetworkBehaviour
 			ToggleControl ();
 
 		}
+		if (Input.GetKeyDown (KeyCode.X)) {
+//			gadget01 = new MoldGrenade();
+		}
+		if (Input.GetKeyDown (KeyCode.C)) {
+//			gadget01 = new MoldSpeedBoost();
+		}
+
     }
 
 	public void ToggleControl() {
@@ -327,6 +330,10 @@ public class playerController : NetworkBehaviour
 		return gadget01.GetName ();
 	}
 
+	public void GetRandomGadget() {
+		myArsenal.GetRandomGadget ();
+	}
+
 	[Command]
 	void CmdFireBullet (Vector3 position, Quaternion rotation, NetworkInstanceId id)
 	{
@@ -382,35 +389,6 @@ public class playerController : NetworkBehaviour
 		Vector3 forwardPos = Vector3.Lerp (position, position + normal, 0.1f);
 		Transform scorchContainer = GameObject.Find ("Decal Container").transform;
 		GameObject curScorch = Instantiate (pScorch, forwardPos, rotation, scorchContainer);
-	}
-
-	[Command]
-	void CmdFireSpecial (Vector3 position, Quaternion rotation, float strength, NetworkInstanceId id) {
-//		Quaternion tempQuat = rotation;
-//		tempQuat.eulerAngles = new Vector3(tempQuat.eulerAngles.x - 30.0f , tempQuat.eulerAngles.y, tempQuat.eulerAngles.z);
-
-		GameObject curGrenade = Instantiate (pGrenade, position, rotation, GameObject.Find ("Ammo Container").transform);
-		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce (Vector3.forward  * strength, ForceMode.Impulse);
-//		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce ((Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
-		curGrenade.GetComponent<Rigidbody> ().angularVelocity = UnityEngine.Random.insideUnitSphere * 5.0f;
-		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
-		//Destroy (curBullet, 2.0f);
-
-		NetworkServer.Spawn (curGrenade);
-
-//		Vector3 offset = new Vector3 (position.x + 1, position.y, position.z);
-//		GameObject curGrenade = Instantiate (pGrenade, offset, rotation, GameObject.Find ("Ammo Container").transform);
-//		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce (((Vector3.right / 5) + Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
-//		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
-//
-//		NetworkServer.Spawn (curGrenade);
-//
-//		offset = new Vector3 (position.x -1, position.y, position.z);
-//		curGrenade = Instantiate (pGrenade, offset, rotation, GameObject.Find ("Ammo Container").transform);
-//		curGrenade.GetComponent<Rigidbody> ().AddRelativeForce (((Vector3.left / 5) + Vector3.forward + (Vector3.up / 4)) * 0.30f, ForceMode.Impulse);
-//		curGrenade.GetComponent<Grenade> ().SetOwnerNetID (id);
-//
-//		NetworkServer.Spawn (curGrenade);
 	}
 
 	[Command]

@@ -69,7 +69,7 @@ public class uiController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-//		if (hasAssignedButton == false && myPlayer != null) {
+		//		if (hasAssignedButton == false && myPlayer != null) {
 //			Debug.Log ("Assigning Button");
 //			Debug.Log (myPlayer.ToString ());
 //
@@ -91,6 +91,8 @@ public class uiController : MonoBehaviour {
 		if (myPlayer.gadget01 != null) {
 			if (myPlayer.gadget01.GetName () == "grenade") {
 				newImage = Resources.Load<Sprite> ("Sprites/bomb_icon");				
+			} else if (myPlayer.gadget01.GetName () == "boost") {
+				newImage = Resources.Load<Sprite> ("Sprites/boost_icon");	
 			}
 
 			newCount = myPlayer.gadget01.GetCurCapacity ();
@@ -110,6 +112,13 @@ public class uiController : MonoBehaviour {
 				chargeMeter.fillAmount = myPlayer.gadget01.GetPercentCharge ();
 				
 			} else if (myPlayer.gadget01.GetToggleCharge () == false) {
+				chargeMeter.enabled = false;
+			}
+
+			if (myPlayer.gadget01.GetName () == "boost" && myPlayer.myVehicleMove.GetSpeedToggle () == true) {
+				chargeMeter.enabled = true;
+				chargeMeter.fillAmount = myPlayer.myVehicleMove.GetPercentBoost ();
+			} else if (myPlayer.gadget01.GetName () == "boost" && myPlayer.myVehicleMove.GetSpeedToggle () == false) {
 				chargeMeter.enabled = false;
 			}
 		} else if (myPlayer.gadget01 == null) {

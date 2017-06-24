@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class Gadget {
 
@@ -43,9 +44,19 @@ public class Gadget {
 		curCapacity -= amount;
 	}
 
+	public void IncreaseCurCapacity(int amount) {
+		curCapacity += amount;
+
+		ResolveCapacityLimit ();
+	}
+
 	public void SetCurCapacity(int amount) {
 		curCapacity = amount;
 
+		ResolveCapacityLimit ();
+	}
+
+	public void ResolveCapacityLimit() {
 		if (curCapacity > maxCapacity) {
 			curCapacity = maxCapacity;
 		}
@@ -59,9 +70,9 @@ public class Gadget {
 		return name;
 	}
 
-	public void AddChargeTime(float addition) {
+	public void AddChargeTime() {
 		if (toggleCharge == true) {
-			curCharge += addition;
+			curCharge += Time.deltaTime;
 
 			if (curCharge > maxCharge) {
 				curCharge = maxCharge;
@@ -105,5 +116,13 @@ public class Gadget {
 
 	public void ResetThrow() {
 		throwStrength = 0.0f;
+	}
+
+	public virtual int ResolveInput() {
+		Debug.Log ("Plain ol' gadget.");
+		return 0;
+	}
+
+	public virtual void ResetAll() {
 	}
 }

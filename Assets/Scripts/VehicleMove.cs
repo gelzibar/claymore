@@ -15,6 +15,10 @@ public class VehicleMove : NetworkBehaviour {
 	private bool grounded;
 	private int groundedRating;
 
+	private float speedMultiplier, speedDuration;
+	private bool speedToggle;
+	private const float speedDefault = 1.0f;
+
 	float forward;
 	float turn;
 	float roll;
@@ -33,11 +37,15 @@ public class VehicleMove : NetworkBehaviour {
 		torque = 8.0f;
 		accel = 3.0f;
 		decel = accel * 3.5f;
-		maxVelocity = 750;
-		minVelocity = 100;
-		myRigidbody.maxAngularVelocity = 2.5f;
+		maxVelocity = 450f;
+		minVelocity = 100f;
+		//myRigidbody.maxAngularVelocity = 2.5f;
 		grounded = false;
 		groundedRating = 0;
+
+		speedMultiplier = 1.0f;
+		speedDuration = 0.0f;
+		speedToggle = false;
 
 		forward = 0.0f;
 		turn = 0.0f;
@@ -61,7 +69,6 @@ public class VehicleMove : NetworkBehaviour {
 	}
 
 	public void ChildGUI() {
-//		GUI.Label (new Rect (400, 0, 100, 100), "curVelocity: " + curVelocity); 
 
 	}
 
@@ -95,6 +102,12 @@ public class VehicleMove : NetworkBehaviour {
 
 
 		isBraking = false;
+
+		if (speedDuration > 0.0f && speedToggle == true) {
+			speedDuration -= Time.deltaTime;
+		} else if (speedDuration <= 0.0f && speedToggle == true) {
+			ResetSpeedMultiplier ();
+		}
 	}
 
 	void Move() {
@@ -119,7 +132,7 @@ public class VehicleMove : NetworkBehaviour {
 
 		DetermineCurVelocity (forward);
 		Vector3 speed = Vector3.forward * curVelocity * groundedAdjust;
-		myRigidbody.AddRelativeForce (speed, ForceMode.Force);
+		myRigidbody.AddRelativeForce (speed * speedMultiplier, ForceMode.Force);
 		myRigidbody.AddRelativeTorque (Vector3.up * turn * torque * groundedAdjust, ForceMode.Acceleration);
 
 		if (jumpTrigger == true) {
@@ -230,5 +243,25 @@ public class VehicleMove : NetworkBehaviour {
 		}
 
 		return signed;
+	}
+
+	public void SetSpeedMultiplier(float amount, float duration) {
+		speedMultiplier = amount;
+		speedDuration = duration;
+		speedToggle = true;
+	}
+
+	public void ResetSpeedMultiplier() {
+		speedMultiplier = speedDefault;
+		speedDuration = 0.0f;
+		speedToggle = false;
+	}
+
+	public bool GetSpeedToggle() {
+		return speedToggle;
+	}
+
+	public float GetPercentBoost() {
+		return speedDuration / 2.0f;
 	}
 }
